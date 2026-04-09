@@ -40,7 +40,8 @@ type OnyxConfig struct {
 }
 
 type CommandConfig struct {
-	ExecTimeout time.Duration
+	ExecTimeout      time.Duration
+	StorageOpTimeout time.Duration
 }
 
 type OperationsConfig struct {
@@ -69,7 +70,8 @@ func Load() Config {
 			SocketPath: getenv("ONYX_STORAGE_SOCKET", "/var/run/onyx-storage.sock"),
 		},
 		Command: CommandConfig{
-			ExecTimeout: time.Duration(getenvInt("ONYX_DASHBOARD_EXEC_TIMEOUT_SECONDS", 10)) * time.Second,
+			ExecTimeout:      time.Duration(getenvInt("ONYX_DASHBOARD_EXEC_TIMEOUT_SECONDS", 10)) * time.Second,
+			StorageOpTimeout: time.Duration(getenvInt("ONYX_DASHBOARD_STORAGE_OP_TIMEOUT_SECONDS", 120)) * time.Second,
 		},
 		Operations: OperationsConfig{
 			AllowDestructiveDM: getenvBool("ONYX_DASHBOARD_ALLOW_DM_MUTATIONS", false),

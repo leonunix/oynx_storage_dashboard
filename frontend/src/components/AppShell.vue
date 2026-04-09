@@ -56,6 +56,7 @@ defineEmits(['logout'])
 const items = [
   { to: '/overview', label: '总览', icon: 'bi bi-speedometer2', permission: 'overview:read' },
   { to: '/storage', label: '存储编排', icon: 'bi bi-diagram-3', permission: 'storage:read' },
+  { to: '/config', label: '引擎配置', icon: 'bi bi-gear', permission: 'storage:write' },
   { to: '/volumes', label: 'Volumes', icon: 'bi bi-hdd-stack', permission: 'volumes:read' },
   { to: '/metrics', label: 'Metrics', icon: 'bi bi-activity', permission: 'metrics:read' },
   { to: '/audit', label: '审计', icon: 'bi bi-journal-text', permission: 'audit:read' },

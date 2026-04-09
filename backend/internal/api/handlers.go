@@ -2,10 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+
 	"github.com/leonunix/onyx_storage/dashboard/backend/internal/auth"
 	"github.com/leonunix/onyx_storage/dashboard/backend/internal/domain"
 	appmw "github.com/leonunix/onyx_storage/dashboard/backend/internal/middleware"
@@ -17,6 +19,7 @@ type Handlers struct {
 	JWTManager     *auth.JWTManager
 	OnyxService    *services.OnyxService
 	StorageService *services.StorageService
+	ConfigService  *services.ConfigService
 	AuditService   *services.AuditService
 	SetupStatus    domain.SetupStatus
 }
@@ -93,6 +96,21 @@ func (h *Handlers) Overview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, overview)
+}
+
+func (h *Handlers) MetricsSummary(w http.ResponseWriter, r *http.Request) {
+	metrics, err := h.OnyxService.MetricsJSON()
+	if err != nil {
+		// Fallback to overview which includes some metrics
+		overview, oErr := h.OnyxService.Overview(r.Context())
+		if oErr != nil {
+			writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, overview)
+		return
+	}
+	writeJSON(w, http.StatusOK, metrics)
 }
 
 func (h *Handlers) ListVolumes(w http.ResponseWriter, r *http.Request) {
@@ -237,4 +255,317 @@ func (h *Handlers) ResetUserPassword(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) ListRoles(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"items": auth.RoleDefinitions()})
+}
+
+// ── RAID management ─────────────────────────────────────────────────
+
+func (h *Handlers) ListRaidArrays(w http.ResponseWriter, r *http.Request) {
+	layout, err := h.StorageService.Layout(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": layout.RaidArrays})
+}
+
+func (h *Handlers) RaidDetail(w http.ResponseWriter, r *http.Request) {
+	name := chi.URLParam(r, "name")
+	arr, err := h.StorageService.RaidDetail(r.Context(), name)
+	if err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, arr)
+}
+
+func (h *Handlers) CreateRaidArray(w http.ResponseWriter, r *http.Request) {
+	var req domain.RaidCreateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	user, _ := appmw.UserFromContext(r.Context())
+
+	if err := h.StorageService.RaidCreate(r.Context(), req); err != nil {
+		status := http.StatusBadGateway
+		if err == services.ErrMutationsDisabled {
+			status = http.StatusForbidden
+		}
+		h.AuditService.Record(user.Username, "raid.create", req.Name, "error", err.Error())
+		writeJSON(w, status, map[string]string{"error": err.Error()})
+		return
+	}
+
+	h.AuditService.Record(user.Username, "raid.create", req.Name, "success", "RAID array created: "+req.Level)
+	writeJSON(w, http.StatusCreated, map[string]string{"status": "created"})
+}
+
+func (h *Handlers) StopRaidArray(w http.ResponseWriter, r *http.Request) {
+	name := chi.URLParam(r, "name")
+	user, _ := appmw.UserFromContext(r.Context())
+
+	if err := h.StorageService.RaidStop(r.Context(), domain.RaidStopRequest{Name: name}); err != nil {
+		status := http.StatusBadGateway
+		if err == services.ErrMutationsDisabled {
+			status = http.StatusForbidden
+		}
+		h.AuditService.Record(user.Username, "raid.stop", name, "error", err.Error())
+		writeJSON(w, status, map[string]string{"error": err.Error()})
+		return
+	}
+
+	h.AuditService.Record(user.Username, "raid.stop", name, "success", "RAID array stopped")
+	writeJSON(w, http.StatusOK, map[string]string{"status": "stopped"})
+}
+
+// ── LVM PV management ──────────────────────────────────────────────
+
+func (h *Handlers) CreatePV(w http.ResponseWriter, r *http.Request) {
+	var req domain.PVCreateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	user, _ := appmw.UserFromContext(r.Context())
+
+	if err := h.StorageService.PVCreate(r.Context(), req); err != nil {
+		status := http.StatusBadGateway
+		if err == services.ErrMutationsDisabled {
+			status = http.StatusForbidden
+		}
+		h.AuditService.Record(user.Username, "pv.create", req.Device, "error", err.Error())
+		writeJSON(w, status, map[string]string{"error": err.Error()})
+		return
+	}
+
+	h.AuditService.Record(user.Username, "pv.create", req.Device, "success", "physical volume created")
+	writeJSON(w, http.StatusCreated, map[string]string{"status": "created"})
+}
+
+func (h *Handlers) RemovePV(w http.ResponseWriter, r *http.Request) {
+	var req domain.PVRemoveRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	user, _ := appmw.UserFromContext(r.Context())
+
+	if err := h.StorageService.PVRemove(r.Context(), req); err != nil {
+		status := http.StatusBadGateway
+		if err == services.ErrMutationsDisabled {
+			status = http.StatusForbidden
+		}
+		h.AuditService.Record(user.Username, "pv.remove", req.Device, "error", err.Error())
+		writeJSON(w, status, map[string]string{"error": err.Error()})
+		return
+	}
+
+	h.AuditService.Record(user.Username, "pv.remove", req.Device, "success", "physical volume removed")
+	writeJSON(w, http.StatusOK, map[string]string{"status": "removed"})
+}
+
+// ── LVM VG management ──────────────────────────────────────────────
+
+func (h *Handlers) CreateVG(w http.ResponseWriter, r *http.Request) {
+	var req domain.VGCreateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	user, _ := appmw.UserFromContext(r.Context())
+
+	if err := h.StorageService.VGCreate(r.Context(), req); err != nil {
+		status := http.StatusBadGateway
+		if err == services.ErrMutationsDisabled {
+			status = http.StatusForbidden
+		}
+		h.AuditService.Record(user.Username, "vg.create", req.Name, "error", err.Error())
+		writeJSON(w, status, map[string]string{"error": err.Error()})
+		return
+	}
+
+	h.AuditService.Record(user.Username, "vg.create", req.Name, "success", "volume group created")
+	writeJSON(w, http.StatusCreated, map[string]string{"status": "created"})
+}
+
+func (h *Handlers) RemoveVG(w http.ResponseWriter, r *http.Request) {
+	name := chi.URLParam(r, "name")
+	user, _ := appmw.UserFromContext(r.Context())
+
+	if err := h.StorageService.VGRemove(r.Context(), name, false); err != nil {
+		status := http.StatusBadGateway
+		if err == services.ErrMutationsDisabled {
+			status = http.StatusForbidden
+		}
+		h.AuditService.Record(user.Username, "vg.remove", name, "error", err.Error())
+		writeJSON(w, status, map[string]string{"error": err.Error()})
+		return
+	}
+
+	h.AuditService.Record(user.Username, "vg.remove", name, "success", "volume group removed")
+	writeJSON(w, http.StatusOK, map[string]string{"status": "removed"})
+}
+
+// ── LVM LV management ──────────────────────────────────────────────
+
+func (h *Handlers) CreateLV(w http.ResponseWriter, r *http.Request) {
+	var req domain.LVCreateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	user, _ := appmw.UserFromContext(r.Context())
+
+	if err := h.StorageService.LVCreate(r.Context(), req); err != nil {
+		status := http.StatusBadGateway
+		if err == services.ErrMutationsDisabled {
+			status = http.StatusForbidden
+		}
+		h.AuditService.Record(user.Username, "lv.create", req.VGName+"/"+req.Name, "error", err.Error())
+		writeJSON(w, status, map[string]string{"error": err.Error()})
+		return
+	}
+
+	h.AuditService.Record(user.Username, "lv.create", req.VGName+"/"+req.Name, "success", "logical volume created")
+	writeJSON(w, http.StatusCreated, map[string]string{"status": "created"})
+}
+
+func (h *Handlers) RemoveLV(w http.ResponseWriter, r *http.Request) {
+	var req domain.LVRemoveRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	user, _ := appmw.UserFromContext(r.Context())
+
+	if err := h.StorageService.LVRemove(r.Context(), req); err != nil {
+		status := http.StatusBadGateway
+		if err == services.ErrMutationsDisabled {
+			status = http.StatusForbidden
+		}
+		h.AuditService.Record(user.Username, "lv.remove", req.VGName+"/"+req.Name, "error", err.Error())
+		writeJSON(w, status, map[string]string{"error": err.Error()})
+		return
+	}
+
+	h.AuditService.Record(user.Username, "lv.remove", req.VGName+"/"+req.Name, "success", "logical volume removed")
+	writeJSON(w, http.StatusOK, map[string]string{"status": "removed"})
+}
+
+func (h *Handlers) ResizeLV(w http.ResponseWriter, r *http.Request) {
+	var req domain.LVResizeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	user, _ := appmw.UserFromContext(r.Context())
+
+	if err := h.StorageService.LVResize(r.Context(), req); err != nil {
+		status := http.StatusBadGateway
+		if err == services.ErrMutationsDisabled {
+			status = http.StatusForbidden
+		}
+		h.AuditService.Record(user.Username, "lv.resize", req.VGName+"/"+req.Name, "error", err.Error())
+		writeJSON(w, status, map[string]string{"error": err.Error()})
+		return
+	}
+
+	h.AuditService.Record(user.Username, "lv.resize", req.VGName+"/"+req.Name, "success", "logical volume resized to "+req.Size)
+	writeJSON(w, http.StatusOK, map[string]string{"status": "resized"})
+}
+
+// ── Provision execution ────────────────────────────────────────────
+
+func (h *Handlers) ExecuteProvision(w http.ResponseWriter, r *http.Request) {
+	var req domain.ProvisionExecuteRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	user, _ := appmw.UserFromContext(r.Context())
+
+	result, err := h.StorageService.ExecuteProvision(r.Context(), req)
+	if err != nil {
+		status := http.StatusBadGateway
+		if err == services.ErrMutationsDisabled {
+			status = http.StatusForbidden
+		}
+		h.AuditService.Record(user.Username, "storage.provision.execute", "", "error", err.Error())
+		writeJSON(w, status, map[string]string{"error": err.Error()})
+		return
+	}
+
+	resultStr := "success"
+	if !result.Success {
+		resultStr = "partial_failure"
+	}
+	h.AuditService.Record(user.Username, "storage.provision.execute", "", resultStr,
+		fmt.Sprintf("executed %d commands, success=%v", len(result.Results), result.Success))
+	writeJSON(w, http.StatusOK, result)
+}
+
+// ── Engine Configuration ────────────────────────────────────────────
+
+func (h *Handlers) GetConfig(w http.ResponseWriter, _ *http.Request) {
+	cfg, err := h.ConfigService.Read()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	mode, _ := h.ConfigService.Mode()
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"config": cfg,
+		"mode":   mode,
+	})
+}
+
+func (h *Handlers) UpdateConfig(w http.ResponseWriter, r *http.Request) {
+	var cfg domain.EngineConfig
+	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+
+	user, _ := appmw.UserFromContext(r.Context())
+
+	if err := h.ConfigService.Write(cfg); err != nil {
+		h.AuditService.Record(user.Username, "config.update", "engine", "error", err.Error())
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	h.AuditService.Record(user.Username, "config.update", "engine", "success", "engine configuration updated")
+	writeJSON(w, http.StatusOK, map[string]string{"status": "saved"})
+}
+
+func (h *Handlers) RestartService(w http.ResponseWriter, r *http.Request) {
+	user, _ := appmw.UserFromContext(r.Context())
+	h.AuditService.Record(user.Username, "config.restart", "engine", "success", "service restart requested")
+
+	if err := h.ConfigService.RestartService(r.Context()); err != nil {
+		h.AuditService.Record(user.Username, "config.restart", "engine", "error", err.Error())
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "restarting"})
+}
+
+func (h *Handlers) ReloadEngine(w http.ResponseWriter, r *http.Request) {
+	user, _ := appmw.UserFromContext(r.Context())
+
+	if err := h.ConfigService.Reload(); err != nil {
+		h.AuditService.Record(user.Username, "config.reload", "engine", "error", err.Error())
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
+
+	mode, _ := h.ConfigService.Mode()
+	h.AuditService.Record(user.Username, "config.reload", "engine", "success", "engine reloaded, mode: "+mode)
+	writeJSON(w, http.StatusOK, domain.ConfigReloadResponse{
+		Mode:    mode,
+		Message: "engine reloaded successfully",
+	})
 }

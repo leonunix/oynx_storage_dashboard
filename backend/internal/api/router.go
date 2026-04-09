@@ -46,12 +46,36 @@ func NewRouter(deps RouterDependencies) http.Handler {
 			protected.Get("/auth/me", deps.Handlers.Me)
 
 			protected.With(appmw.RequirePermission("overview:read")).Get("/dashboard/overview", deps.Handlers.Overview)
-			protected.With(appmw.RequirePermission("metrics:read")).Get("/metrics/summary", deps.Handlers.Overview)
+			protected.With(appmw.RequirePermission("metrics:read")).Get("/metrics/summary", deps.Handlers.MetricsSummary)
 			protected.With(appmw.RequirePermission("volumes:read")).Get("/volumes", deps.Handlers.ListVolumes)
 			protected.With(appmw.RequirePermission("volumes:write")).Post("/volumes", deps.Handlers.CreateVolume)
 			protected.With(appmw.RequirePermission("volumes:write")).Delete("/volumes/{name}", deps.Handlers.DeleteVolume)
 			protected.With(appmw.RequirePermission("storage:read")).Get("/storage/layout", deps.Handlers.StorageLayout)
 			protected.With(appmw.RequirePermission("storage:write")).Post("/storage/workflows/provision/preview", deps.Handlers.ProvisionPreview)
+			protected.With(appmw.RequirePermission("storage:write")).Post("/storage/workflows/provision/execute", deps.Handlers.ExecuteProvision)
+
+			// RAID management
+			protected.With(appmw.RequirePermission("storage:read")).Get("/storage/raid", deps.Handlers.ListRaidArrays)
+			protected.With(appmw.RequirePermission("storage:read")).Get("/storage/raid/{name}", deps.Handlers.RaidDetail)
+			protected.With(appmw.RequirePermission("storage:write")).Post("/storage/raid", deps.Handlers.CreateRaidArray)
+			protected.With(appmw.RequirePermission("storage:write")).Delete("/storage/raid/{name}", deps.Handlers.StopRaidArray)
+
+			// LVM PV management
+			protected.With(appmw.RequirePermission("storage:write")).Post("/storage/pv", deps.Handlers.CreatePV)
+			protected.With(appmw.RequirePermission("storage:write")).Delete("/storage/pv", deps.Handlers.RemovePV)
+
+			// LVM VG management
+			protected.With(appmw.RequirePermission("storage:write")).Post("/storage/vg", deps.Handlers.CreateVG)
+			protected.With(appmw.RequirePermission("storage:write")).Delete("/storage/vg/{name}", deps.Handlers.RemoveVG)
+
+			// LVM LV management
+			protected.With(appmw.RequirePermission("storage:write")).Post("/storage/lv", deps.Handlers.CreateLV)
+			protected.With(appmw.RequirePermission("storage:write")).Delete("/storage/lv", deps.Handlers.RemoveLV)
+			protected.With(appmw.RequirePermission("storage:write")).Post("/storage/lv/resize", deps.Handlers.ResizeLV)
+			protected.With(appmw.RequirePermission("storage:read")).Get("/config", deps.Handlers.GetConfig)
+			protected.With(appmw.RequirePermission("storage:write")).Put("/config", deps.Handlers.UpdateConfig)
+			protected.With(appmw.RequirePermission("storage:write")).Post("/config/reload", deps.Handlers.ReloadEngine)
+			protected.With(appmw.RequirePermission("storage:write")).Post("/config/restart", deps.Handlers.RestartService)
 			protected.With(appmw.RequirePermission("audit:read")).Get("/audit/events", deps.Handlers.ListAuditEvents)
 			protected.With(appmw.RequirePermission("users:manage")).Get("/users", deps.Handlers.ListUsers)
 			protected.With(appmw.RequirePermission("users:manage")).Post("/users", deps.Handlers.CreateUser)

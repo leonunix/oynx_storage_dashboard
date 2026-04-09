@@ -40,7 +40,8 @@ func NewServer(cfg config.Config) (*http.Server, error) {
 		UserStore:      userStore,
 		JWTManager:     jwtManager,
 		OnyxService:    services.NewOnyxService(cfg.Onyx, runner),
-		StorageService: services.NewStorageService(cfg.Operations, runner),
+		StorageService: services.NewStorageService(cfg.Operations, runner, cfg.Command.StorageOpTimeout),
+		ConfigService:  services.NewConfigService(cfg.Onyx.ConfigPath, cfg.Onyx.SocketPath, runner),
 		AuditService:   auditService,
 		SetupStatus: domain.SetupStatus{
 			Initialized:       false,

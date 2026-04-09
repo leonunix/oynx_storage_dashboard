@@ -12,10 +12,10 @@
 
 ## 第二阶段：对接主引擎
 
-- [ ] Rust 服务增加 JSON IPC
-- [ ] 指标以 JSON / Prometheus 暴露
-- [ ] ublk 设备状态纳入 API
-- [ ] volume 级健康状态、吞吐、错误计数
+- [x] Rust 服务增加 JSON IPC (status-json, volumes-json, metrics-json)
+- [x] 指标以 JSON 暴露 (MetricsJSON 结构化, 按类别分组展示)
+- [x] ublk 设备状态纳入 API (status-json 包含 ublk_devices, Overview 展示)
+- [x] volume 级健康状态、吞吐、错误计数 (per-volume VolumeMetrics: read/write ops+bytes+errors)
 
 ## 第三阶段：安全和生产化
 

@@ -3,6 +3,7 @@ package services
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -25,6 +26,12 @@ func NewOnyxService(cfg config.OnyxConfig, runner *system.Runner) *OnyxService {
 }
 
 func (s *OnyxService) Overview(ctx context.Context) (domain.Overview, error) {
+	// Try JSON IPC first
+	if ov, err := s.overviewJSON(); err == nil {
+		return ov, nil
+	}
+
+	// Fallback to text parsing
 	raw, err := s.statusRaw(ctx)
 	if err != nil {
 		return domain.Overview{}, err
@@ -75,7 +82,101 @@ func (s *OnyxService) Overview(ctx context.Context) (domain.Overview, error) {
 	return overview, nil
 }
 
+func (s *OnyxService) overviewJSON() (domain.Overview, error) {
+	lines, err := s.sendSocketCommand("status-json")
+	if err != nil {
+		return domain.Overview{}, err
+	}
+	raw := strings.Join(lines, "\n")
+	var status domain.StatusJSON
+	if err := json.Unmarshal([]byte(raw), &status); err != nil {
+		return domain.Overview{}, fmt.Errorf("parse status-json: %w", err)
+	}
+
+	ov := domain.Overview{
+		EngineMode:    status.Mode,
+		EngineRunning: true,
+		UblkDevices:   status.UblkDevices,
+		Metrics:       map[string]any{},
+	}
+	if s := status.Status; s != nil {
+		ov.VolumeCount = s.VolumeCount
+		ov.LiveHandleCount = s.LiveHandleCount
+		if s.ZoneCount != nil {
+			ov.ZoneCount = *s.ZoneCount
+		}
+		if s.BufferFillPct != nil {
+			ov.BufferFillPercent = *s.BufferFillPct
+		}
+		if s.BufferPendingEntries != nil {
+			ov.BufferPendingEntries = *s.BufferPendingEntries
+		}
+		if s.AllocatorFreeBlocks != nil {
+			ov.AllocatorFreeBlocks = *s.AllocatorFreeBlocks
+		}
+		if s.AllocatorTotalBlocks != nil {
+			ov.AllocatorTotalBlocks = *s.AllocatorTotalBlocks
+		}
+		ov.BufferShards = s.BufferShards
+		ov.Metrics["uptime_secs"] = s.Metrics.UptimeSecs
+		ov.Metrics["volume_read_ops"] = s.Metrics.VolumeReadOps
+		ov.Metrics["volume_write_ops"] = s.Metrics.VolumeWriteOps
+		ov.Metrics["volume_read_bytes"] = s.Metrics.VolumeReadBytes
+		ov.Metrics["volume_write_bytes"] = s.Metrics.VolumeWriteBytes
+		ov.Metrics["compress_input_bytes"] = s.Metrics.CompressInputBytes
+		ov.Metrics["compress_output_bytes"] = s.Metrics.CompressOutputBytes
+		ov.Metrics["dedup_hits"] = s.Metrics.DedupHits
+		ov.Metrics["dedup_misses"] = s.Metrics.DedupMisses
+		ov.Metrics["gc_cycles"] = s.Metrics.GcCycles
+		ov.Metrics["gc_blocks_rewritten"] = s.Metrics.GcBlocksRewritten
+		ov.Metrics["flush_errors"] = s.Metrics.FlushErrors
+		ov.Metrics["gc_errors"] = s.Metrics.GcErrors
+		ov.Metrics["read_crc_errors"] = s.Metrics.ReadCrcErrors
+
+		// Compute ratios
+		m := s.Metrics
+		if m.CompressOutputBytes > 0 {
+			ov.CompressionRatio = float64(m.CompressInputBytes) / float64(m.CompressOutputBytes)
+		} else {
+			ov.CompressionRatio = 1.0
+		}
+		dedupTotal := m.DedupHits + m.DedupMisses
+		if dedupTotal > 0 {
+			ov.DedupHitRate = float64(m.DedupHits) / float64(dedupTotal)
+		}
+		// Data reduction: logical bytes (compress input + dedup saved) / physical bytes (compress output)
+		dedupSavedBytes := m.DedupHits * 4096
+		logicalTotal := m.CompressInputBytes + dedupSavedBytes
+		if m.CompressOutputBytes > 0 && logicalTotal > 0 {
+			ov.DataReductionRatio = float64(logicalTotal) / float64(m.CompressOutputBytes)
+		} else {
+			ov.DataReductionRatio = 1.0
+		}
+	}
+	return ov, nil
+}
+
+// MetricsJSON fetches structured metrics via JSON IPC.
+func (s *OnyxService) MetricsJSON() (*domain.MetricsJSON, error) {
+	lines, err := s.sendSocketCommand("metrics-json")
+	if err != nil {
+		return nil, err
+	}
+	raw := strings.Join(lines, "\n")
+	var m domain.MetricsJSON
+	if err := json.Unmarshal([]byte(raw), &m); err != nil {
+		return nil, fmt.Errorf("parse metrics-json: %w", err)
+	}
+	return &m, nil
+}
+
 func (s *OnyxService) ListVolumes(ctx context.Context) ([]domain.Volume, error) {
+	// Try JSON IPC first
+	if vols, err := s.listVolumesJSON(); err == nil {
+		return vols, nil
+	}
+
+	// Fallback: text socket IPC
 	lines, err := s.sendSocketCommand("list-volumes")
 	if err == nil {
 		volumes := make([]domain.Volume, 0, len(lines))
@@ -95,6 +196,7 @@ func (s *OnyxService) ListVolumes(ctx context.Context) ([]domain.Volume, error) 
 		return volumes, nil
 	}
 
+	// Fallback: CLI
 	output, err := s.runner.Run(ctx, s.cfg.BinaryPath, "-c", s.cfg.ConfigPath, "list-volumes")
 	if err != nil {
 		return nil, err
@@ -120,6 +222,31 @@ func (s *OnyxService) ListVolumes(ctx context.Context) ([]domain.Volume, error) 
 		})
 	}
 	return volumes, nil
+}
+
+func (s *OnyxService) listVolumesJSON() ([]domain.Volume, error) {
+	lines, err := s.sendSocketCommand("volumes-json")
+	if err != nil {
+		return nil, err
+	}
+	raw := strings.Join(lines, "\n")
+	var vols []domain.VolumeJSON
+	if err := json.Unmarshal([]byte(raw), &vols); err != nil {
+		return nil, fmt.Errorf("parse volumes-json: %w", err)
+	}
+	result := make([]domain.Volume, 0, len(vols))
+	for _, v := range vols {
+		result = append(result, domain.Volume{
+			Name:        v.ID,
+			SizeBytes:   v.SizeBytes,
+			ZoneCount:   v.ZoneCount,
+			Compression: fmt.Sprintf("%v", v.Compression),
+			Status:      "online",
+			CreatedAt:   v.CreatedAt,
+			Metrics:     v.Metrics,
+		})
+	}
+	return result, nil
 }
 
 func (s *OnyxService) CreateVolume(ctx context.Context, req domain.CreateVolumeRequest) error {
