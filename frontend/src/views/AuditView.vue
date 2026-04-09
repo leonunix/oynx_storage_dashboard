@@ -1,9 +1,9 @@
 <template>
-  <AppShell title="审计日志" eyebrow="Security & Operations" :user="auth.user" @logout="logout">
+  <AppShell title="audit.title" eyebrow="Security & Operations" :user="auth.user" @logout="logout">
     <div class="content-card">
       <div class="section-header">
-        <h3>最近事件</h3>
-        <button class="btn btn-sm btn-outline-light" @click="load">刷新</button>
+        <h3>{{ $t('audit.recentEvents') }}</h3>
+        <button class="btn btn-sm btn-outline-light" @click="load">{{ $t('common.refresh') }}</button>
       </div>
       <div class="timeline">
         <div v-for="item in items" :key="item.id" class="timeline-item">

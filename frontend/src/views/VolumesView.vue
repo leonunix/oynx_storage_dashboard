@@ -1,11 +1,11 @@
 <template>
-  <AppShell title="Volume 生命周期" eyebrow="Volume Operations" :user="auth.user" @logout="logout">
+  <AppShell title="volumes.title" eyebrow="Volume Operations" :user="auth.user" @logout="logout">
     <div class="row g-4">
       <div class="col-12 col-lg-5">
         <div class="content-card">
           <div class="section-header">
-            <h3>创建 Volume</h3>
-            <span class="badge text-bg-success">写操作</span>
+            <h3>{{ $t('volumes.createVolume') }}</h3>
+            <span class="badge text-bg-success">{{ $t('common.writeOp') }}</span>
           </div>
           <form class="d-grid gap-3" @submit.prevent="createVolume">
             <input v-model="form.name" class="form-control" placeholder="volume name" />
@@ -15,7 +15,7 @@
               <option value="zstd">zstd</option>
               <option value="none">none</option>
             </select>
-            <button class="btn btn-accent">创建</button>
+            <button class="btn btn-accent">{{ $t('common.create') }}</button>
           </form>
         </div>
       </div>
@@ -23,8 +23,8 @@
       <div class="col-12 col-lg-7">
         <div class="content-card">
           <div class="section-header">
-            <h3>现有 Volumes</h3>
-            <button class="btn btn-sm btn-outline-light" @click="load">刷新</button>
+            <h3>{{ $t('volumes.existingVolumes') }}</h3>
+            <button class="btn btn-sm btn-outline-light" @click="load">{{ $t('common.refresh') }}</button>
           </div>
           <div class="table-responsive">
             <table class="table align-middle">
@@ -62,11 +62,11 @@
                     <span v-else class="text-muted">-</span>
                   </td>
                   <td class="text-end">
-                    <button class="btn btn-sm btn-outline-danger" @click="removeVolume(item.name)">删除</button>
+                    <button class="btn btn-sm btn-outline-danger" @click="removeVolume(item.name)">{{ $t('common.delete') }}</button>
                   </td>
                 </tr>
                 <tr v-if="items.length === 0">
-                  <td colspan="7" class="text-center text-secondary py-4">暂无 volume</td>
+                  <td colspan="7" class="text-center text-secondary py-4">{{ $t('volumes.noVolumes') }}</td>
                 </tr>
               </tbody>
             </table>

@@ -316,8 +316,11 @@ func (s *OnyxService) sendSocketCommand(command string) ([]string, error) {
 	lines := make([]string, 0)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		if line == "" || line == "ok" || strings.HasPrefix(line, "ok ") {
+		if line == "" {
 			continue
+		}
+		if line == "ok" || strings.HasPrefix(line, "ok ") {
+			break
 		}
 		if strings.HasPrefix(line, "error:") {
 			return nil, errors.New(strings.TrimSpace(strings.TrimPrefix(line, "error:")))

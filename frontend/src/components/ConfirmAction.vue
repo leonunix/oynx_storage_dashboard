@@ -1,16 +1,16 @@
 <template>
   <span v-if="!confirming">
     <button :class="buttonClass" :disabled="disabled" @click="confirming = true">
-      {{ label }}
+      {{ label || $t('confirmAction.defaultLabel') }}
     </button>
   </span>
   <span v-else class="d-inline-flex align-items-center gap-2">
-    <span class="text-danger fw-semibold" style="font-size: 0.85rem">{{ confirmText }}</span>
+    <span class="text-danger fw-semibold" style="font-size: 0.85rem">{{ confirmText || $t('confirmAction.defaultConfirmText') }}</span>
     <button class="btn btn-sm btn-danger" :disabled="running" @click="doConfirm">
-      {{ running ? '...' : '确认' }}
+      {{ running ? '...' : $t('confirmAction.confirm') }}
     </button>
     <button class="btn btn-sm btn-outline-secondary" :disabled="running" @click="confirming = false">
-      取消
+      {{ $t('confirmAction.cancel') }}
     </button>
   </span>
 </template>
@@ -19,8 +19,8 @@
 import { ref } from 'vue'
 
 defineProps({
-  label: { type: String, default: '删除' },
-  confirmText: { type: String, default: '确定要执行此操作？' },
+  label: { type: String, default: '' },
+  confirmText: { type: String, default: '' },
   buttonClass: { type: String, default: 'btn btn-sm btn-outline-danger' },
   disabled: { type: Boolean, default: false },
 })

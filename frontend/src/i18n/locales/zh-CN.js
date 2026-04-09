@@ -1,0 +1,216 @@
+export default {
+  // ── Common ──
+  common: {
+    refresh: '刷新',
+    create: '创建',
+    delete: '删除',
+    remove: '移除',
+    save: '保存',
+    cancel: '取消',
+    confirm: '确认',
+    loading: '加载中...',
+    noData: '暂无数据',
+    writeOp: '写操作',
+    stop: '停止',
+    adjust: '调整',
+    ok: '确定',
+    generating: '生成中...',
+    creating: '创建中...',
+    force: 'Force',
+  },
+
+  // ── AppShell ──
+  shell: {
+    brandCopy: '从设备编排到 volume 生命周期，再到引擎观测与审计，全都收在一个控制面里。',
+    currentUser: '当前用户',
+    notLoggedIn: '未登录',
+    role: '角色',
+    logout: '退出登录',
+    nav: {
+      overview: '总览',
+      storage: '存储编排',
+      config: '引擎配置',
+      volumes: 'Volumes',
+      metrics: 'Metrics',
+      audit: '审计',
+      users: '用户与权限',
+    },
+  },
+
+  // ── LoginView ──
+  login: {
+    heroTitle: '清爽、可靠、面向企业的存储控制平面',
+    heroDesc: '从设备编排、volume 生命周期，到引擎状态、审计与权限管理，统一落在一个更适合团队协作的控制面里。',
+    initGovernance: '初始化即治理',
+    initGovernanceDesc: '首次启动必须创建管理员，避免默认口令直接进入系统。',
+    independentDB: '控制面数据库独立',
+    independentDBDesc: '用户、角色与审计走 SQLite，和 Onyx 数据路径解耦。',
+    enterpriseTheme: '企业风格主题',
+    enterpriseThemeDesc: '浅色、蓝绿主色、明确层次，更适合长期运维和团队协作。',
+    signIn: 'Sign In',
+    firstTimeSetup: 'First-Time Setup',
+    loginTitle: '控制平面登录',
+    initTitle: '初始化管理员账号',
+    loginDesc: '初始化完成后，从这里登录控制面。后续可以继续接 LDAP / OIDC。',
+    initDesc: '当前系统还没有任何用户。请先创建首个管理员账号，初始化完成后再进入 Dashboard。',
+    adminUsername: '管理员用户名',
+    displayName: '显示名称',
+    initialPassword: '初始密码',
+    initializing: '初始化中...',
+    completeInit: '完成初始化',
+    username: '用户名',
+    password: '密码',
+    loggingIn: '登录中...',
+    enterDashboard: '进入 Dashboard',
+    setupRequired: '系统尚未初始化，请先创建管理员账号。',
+    loginFailed: '登录失败',
+    initFailed: '初始化失败',
+  },
+
+  // ── OverviewView ──
+  overview: {
+    title: '引擎总览',
+    refreshStatus: '刷新状态',
+    volumeCountNote: '当前配置卷数量',
+    zoneWorkersNote: '并发工作单元',
+    bufferFillNote: '接近高水位时应重点关注',
+    compressionRatio: '压缩率',
+    compressionNote: 'compress in / out',
+    dedupHitRate: '去重命中率',
+    dedupNote: 'dedup hits / total',
+    dataReduction: '数据缩减比',
+    dataReductionNote: '逻辑 / 物理 (含压缩+去重)',
+    keyMetrics: '关键指标',
+    liveSnapshot: '实时快照',
+    modeNoteActive: 'IO active',
+    modeNoteStandby: 'metadata only',
+    modeNoteBare: 'IPC only',
+  },
+
+  // ── VolumesView ──
+  volumes: {
+    title: 'Volume 生命周期',
+    createVolume: '创建 Volume',
+    existingVolumes: '现有 Volumes',
+    noVolumes: '暂无 volume',
+  },
+
+  // ── StorageView ──
+  storage: {
+    title: '存储编排',
+    tabs: {
+      topology: '拓扑总览',
+      raid: 'RAID 管理',
+      lvm: 'LVM 管理',
+      provision: 'Provision',
+    },
+    noBlockDevices: 'No block devices detected',
+    noDmTargets: 'No dm targets',
+    noRaidArrays: 'No RAID arrays',
+    noVolumeGroups: 'No volume groups',
+    noPhysicalVolumes: 'No physical volumes',
+    noLogicalVolumes: 'No logical volumes',
+    existingRaid: '现有 RAID Arrays',
+    createRaid: '创建 RAID Array',
+    stopRaid: '停止此 RAID？',
+    raidNote: 'RAID 创建可能需要数分钟，请耐心等待。',
+    createRaidBtn: '创建 RAID',
+    removePVConfirm: '移除此 PV？',
+    createPV: '创建 PV',
+    removeVGConfirm: '移除此 VG？',
+    createVG: '创建 VG',
+    removeLVConfirm: '移除此 LV？',
+    createLV: '创建 LV',
+    resizeLabel: '调整',
+    executePlan: '执行计划',
+    executePlanConfirm: '将执行以上所有命令，确定？',
+    generatePlan: '生成计划',
+    executionResult: '执行结果',
+    allSuccess: '全部成功',
+    partialFail: '部分失败',
+    previewOnly: 'Preview Only',
+    executionReady: 'Execution Ready',
+    provisionSuccess: 'Provision plan executed successfully',
+    provisionFail: 'Provision plan partially failed - see results below',
+  },
+
+  // ── ConfigView ──
+  config: {
+    title: '引擎配置',
+    configEdit: '配置编辑',
+    engineStatus: '引擎状态',
+    currentMode: '当前模式',
+    saving: '保存中...',
+    saveConfig: '保存配置',
+    reloading: '重载中...',
+    hotReload: '热重载 (GC/Dedup 参数)',
+    restarting: '重启中...',
+    restartService: '重启服务 (shard/设备变更)',
+    hotReloadNote: '热重载: GC、Dedup 参数立即生效',
+    restartNote: '重启服务: shard 数、设备路径、zone_count 等变更需要重启',
+    bareHint: '配置 [meta] rocksdb_path 后重载进入 standby 模式',
+    standbyHint: '配置 [storage] data_device 和 [buffer] device 后重载进入 active 模式',
+    activeHint: '引擎运行中，可热更新 GC / Dedup 参数',
+    unknownHint: '无法连接引擎',
+    configSaved: '配置已保存',
+    loadFailed: '加载配置失败',
+    saveFailed: '保存失败',
+    restartStarted: '服务重启中... 请稍候刷新页面',
+    restartFailed: '重启失败',
+    reloadSuccess: '引擎重载成功，当前模式: {mode}',
+    reloadFailed: '重载失败',
+  },
+
+  // ── MetricsView ──
+  metrics: {
+    title: 'Metrics',
+  },
+
+  // ── AuditView ──
+  audit: {
+    title: '审计日志',
+    recentEvents: '最近事件',
+  },
+
+  // ── UsersView ──
+  users: {
+    title: '用户与权限',
+    createUser: '创建用户',
+    rolePermissions: '角色权限',
+    userList: '用户列表',
+    noUsers: '暂无用户',
+    resetPassword: '重置密码',
+    resetPasswordPrompt: '为 {username} 设置新密码',
+  },
+
+  // ── ConfirmAction ──
+  confirmAction: {
+    defaultLabel: '删除',
+    defaultConfirmText: '确定要执行此操作？',
+    confirm: '确认',
+    cancel: '取消',
+  },
+
+  // ── MutationGuard ──
+  mutationGuard: {
+    warning: '当前环境禁止执行存储变更操作。如需启用，请设置',
+  },
+
+  // ── Backend Errors ──
+  errors: {
+    unknown: '未知错误',
+    notFound: '未找到',
+    invalidRequestBody: '请求格式无效',
+    setupRequired: '系统尚未初始化',
+    invalidCredentials: '用户名或密码错误',
+    failedToIssueToken: '签发令牌失败',
+    missingBearerToken: '缺少认证令牌',
+    invalidToken: '无效令牌',
+    unauthenticated: '未认证',
+    permissionDenied: '权限不足',
+    userDisabled: '用户已禁用',
+    usernameRequired: '用户名不能为空',
+    passwordRequired: '密码不能为空',
+    alreadyInitialized: '系统已初始化',
+  },
+}

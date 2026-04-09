@@ -1,17 +1,17 @@
 <template>
-  <AppShell title="引擎总览" eyebrow="Service Health" :user="auth.user" @logout="logout">
+  <AppShell title="overview.title" eyebrow="Service Health" :user="auth.user" @logout="logout">
     <template #header-actions>
-      <button class="btn btn-accent" @click="load">刷新状态</button>
+      <button class="btn btn-accent" @click="load">{{ $t('overview.refreshStatus') }}</button>
     </template>
 
     <div class="stat-grid">
       <StatCard label="Engine Mode" :value="overview.engineMode || '-'" :note="modeNote" />
-      <StatCard label="Volumes" :value="overview.volumeCount ?? '-'" note="当前配置卷数量" />
-      <StatCard label="Zone Workers" :value="overview.zoneCount ?? '-'" note="并发工作单元" />
-      <StatCard label="Buffer Fill" :value="`${overview.bufferFillPercent ?? 0}%`" note="接近高水位时应重点关注" />
-      <StatCard label="压缩率" :value="fmtRatio(overview.compressionRatio)" note="compress in / out" />
-      <StatCard label="去重命中率" :value="fmtPercent(overview.dedupHitRate)" note="dedup hits / total" />
-      <StatCard label="数据缩减比" :value="fmtRatio(overview.dataReductionRatio)" note="逻辑 / 物理 (含压缩+去重)" />
+      <StatCard label="Volumes" :value="overview.volumeCount ?? '-'" :note="$t('overview.volumeCountNote')" />
+      <StatCard label="Zone Workers" :value="overview.zoneCount ?? '-'" :note="$t('overview.zoneWorkersNote')" />
+      <StatCard label="Buffer Fill" :value="`${overview.bufferFillPercent ?? 0}%`" :note="$t('overview.bufferFillNote')" />
+      <StatCard :label="$t('overview.compressionRatio')" :value="fmtRatio(overview.compressionRatio)" :note="$t('overview.compressionNote')" />
+      <StatCard :label="$t('overview.dedupHitRate')" :value="fmtPercent(overview.dedupHitRate)" :note="$t('overview.dedupNote')" />
+      <StatCard :label="$t('overview.dataReduction')" :value="fmtRatio(overview.dataReductionRatio)" :note="$t('overview.dataReductionNote')" />
     </div>
 
     <div class="row g-4">
@@ -77,8 +77,8 @@
       <div class="col-12 col-xl-7">
         <div class="content-card">
           <div class="section-header">
-            <h3>关键指标</h3>
-            <span class="badge text-bg-dark">实时快照</span>
+            <h3>{{ $t('overview.keyMetrics') }}</h3>
+            <span class="badge text-bg-dark">{{ $t('overview.liveSnapshot') }}</span>
           </div>
           <div class="metric-list">
             <div v-for="(value, key) in overview.metrics" :key="key" class="metric-row">
@@ -124,12 +124,14 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import http from '../api/http'
 import AppShell from '../components/AppShell.vue'
 import StatCard from '../components/StatCard.vue'
 import { useAuthStore } from '../stores/auth'
 
+const { t } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
 const overview = reactive({})
@@ -148,9 +150,9 @@ const fmtPercent = (v) => {
 
 const modeNote = computed(() => {
   switch (overview.engineMode) {
-    case 'active': return 'IO active'
-    case 'standby': return 'metadata only'
-    case 'bare': return 'IPC only'
+    case 'active': return t('overview.modeNoteActive')
+    case 'standby': return t('overview.modeNoteStandby')
+    case 'bare': return t('overview.modeNoteBare')
     default: return ''
   }
 })

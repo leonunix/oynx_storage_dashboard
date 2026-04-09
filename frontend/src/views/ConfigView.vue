@@ -1,14 +1,14 @@
 <template>
-  <AppShell title="引擎配置" eyebrow="TOML Configuration" :user="auth.user" @logout="logout">
+  <AppShell title="config.title" eyebrow="TOML Configuration" :user="auth.user" @logout="logout">
     <div class="row g-4">
       <div class="col-12 col-xl-7">
         <div class="content-card">
           <div class="section-header">
-            <h3>配置编辑</h3>
-            <button class="btn btn-sm btn-outline-light" @click="loadConfig">刷新</button>
+            <h3>{{ $t('config.configEdit') }}</h3>
+            <button class="btn btn-sm btn-outline-light" @click="loadConfig">{{ $t('common.refresh') }}</button>
           </div>
 
-          <div v-if="loading" class="text-center py-5 text-muted">加载中...</div>
+          <div v-if="loading" class="text-center py-5 text-muted">{{ $t('common.loading') }}</div>
 
           <div v-else class="config-sections">
             <!-- Meta -->
@@ -155,12 +155,12 @@
       <div class="col-12 col-xl-5">
         <div class="content-card">
           <div class="section-header">
-            <h3>引擎状态</h3>
+            <h3>{{ $t('config.engineStatus') }}</h3>
           </div>
 
           <div class="mode-display mb-4">
             <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="fw-semibold">当前模式</span>
+              <span class="fw-semibold">{{ $t('config.currentMode') }}</span>
               <span :class="modeBadgeClass">{{ mode }}</span>
             </div>
             <p class="text-muted small mb-0">{{ modeHint }}</p>
@@ -189,20 +189,20 @@
           <div class="d-grid gap-2">
             <button class="btn btn-accent" @click="saveConfig" :disabled="saving">
               <i class="bi bi-save me-1"></i>
-              {{ saving ? '保存中...' : '保存配置' }}
+              {{ saving ? $t('config.saving') : $t('config.saveConfig') }}
             </button>
             <button class="btn btn-primary" @click="reloadEngine" :disabled="reloading">
               <i class="bi bi-arrow-clockwise me-1"></i>
-              {{ reloading ? '重载中...' : '热重载 (GC/Dedup 参数)' }}
+              {{ reloading ? $t('config.reloading') : $t('config.hotReload') }}
             </button>
             <button class="btn btn-outline-danger" @click="restartService" :disabled="restarting">
               <i class="bi bi-power me-1"></i>
-              {{ restarting ? '重启中...' : '重启服务 (shard/设备变更)' }}
+              {{ restarting ? $t('config.restarting') : $t('config.restartService') }}
             </button>
           </div>
           <p class="text-muted small mt-2 mb-0">
-            热重载: GC、Dedup 参数立即生效<br>
-            重启服务: shard 数、设备路径、zone_count 等变更需要重启
+            {{ $t('config.hotReloadNote') }}<br>
+            {{ $t('config.restartNote') }}
           </p>
 
           <div v-if="message" :class="['alert', messageClass, 'mt-3', 'mb-0']" role="alert">
@@ -216,11 +216,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import AppShell from '../components/AppShell.vue'
 import http from '../api/http'
+import { translateError } from '../i18n/errorMap'
 
+const { t } = useI18n()
 const auth = useAuthStore()
 const router = useRouter()
 
@@ -264,10 +267,10 @@ const modeBadgeClass = computed(() => {
 
 const modeHint = computed(() => {
   switch (mode.value) {
-    case 'bare': return '配置 [meta] rocksdb_path 后重载进入 standby 模式'
-    case 'standby': return '配置 [storage] data_device 和 [buffer] device 后重载进入 active 模式'
-    case 'active': return '引擎运行中，可热更新 GC / Dedup 参数'
-    default: return '无法连接引擎'
+    case 'bare': return t('config.bareHint')
+    case 'standby': return t('config.standbyHint')
+    case 'active': return t('config.activeHint')
+    default: return t('config.unknownHint')
   }
 })
 
@@ -284,7 +287,7 @@ async function loadConfig() {
     config.value = data.config || config.value
     mode.value = data.mode || 'unknown'
   } catch (e) {
-    showMessage('加载配置失败: ' + (e.response?.data?.error || e.message), true)
+    showMessage(t('config.loadFailed') + ': ' + (translateError(e.response?.data?.error, t) || e.message), true)
   } finally {
     loading.value = false
   }
@@ -311,9 +314,9 @@ async function saveConfig() {
   try {
     const payload = cleanConfig(config.value)
     await http.put('/config', payload)
-    showMessage('配置已保存')
+    showMessage(t('config.configSaved'))
   } catch (e) {
-    showMessage('保存失败: ' + (e.response?.data?.error || e.message), true)
+    showMessage(t('config.saveFailed') + ': ' + (translateError(e.response?.data?.error, t) || e.message), true)
   } finally {
     saving.value = false
   }
@@ -323,9 +326,9 @@ async function restartService() {
   restarting.value = true
   try {
     await http.post('/config/restart')
-    showMessage('服务重启中... 请稍候刷新页面')
+    showMessage(t('config.restartStarted'))
   } catch (e) {
-    showMessage('重启失败: ' + (e.response?.data?.error || e.message), true)
+    showMessage(t('config.restartFailed') + ': ' + (translateError(e.response?.data?.error, t) || e.message), true)
   } finally {
     restarting.value = false
   }
@@ -336,9 +339,9 @@ async function reloadEngine() {
   try {
     const { data } = await http.post('/config/reload')
     mode.value = data.mode || mode.value
-    showMessage('引擎重载成功，当前模式: ' + data.mode)
+    showMessage(t('config.reloadSuccess', { mode: data.mode }))
   } catch (e) {
-    showMessage('重载失败: ' + (e.response?.data?.error || e.message), true)
+    showMessage(t('config.reloadFailed') + ': ' + (translateError(e.response?.data?.error, t) || e.message), true)
   } finally {
     reloading.value = false
   }

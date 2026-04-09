@@ -1,5 +1,5 @@
 <template>
-  <AppShell title="存储编排" eyebrow="dm / RAID / LVM / Provisioning" :user="auth.user" @logout="logout">
+  <AppShell title="storage.title" eyebrow="dm / RAID / LVM / Provisioning" :user="auth.user" @logout="logout">
     <MutationGuard :allowed="layout.allowMutations" />
 
     <div v-if="error" class="alert alert-danger mb-3">{{ error }}</div>
@@ -21,7 +21,7 @@
     <!-- Tab 1: Topology -->
     <div v-if="activeTab === 'topology'">
       <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-sm btn-outline-light" @click="loadLayout">刷新</button>
+        <button class="btn btn-sm btn-outline-light" @click="loadLayout">{{ $t('common.refresh') }}</button>
       </div>
 
       <div class="row g-4">
@@ -35,7 +35,7 @@
                 <span>{{ d.state || 'unknown' }}</span>
               </div>
             </div>
-            <div v-if="!(layout.blockDevices?.length)" class="text-muted">No block devices detected</div>
+            <div v-if="!(layout.blockDevices?.length)" class="text-muted">{{ $t('storage.noBlockDevices') }}</div>
           </div>
         </div>
 
@@ -47,7 +47,7 @@
                 {{ item.name }}
               </div>
             </div>
-            <div v-if="!(layout.dmTargets?.length)" class="text-muted">No dm targets</div>
+            <div v-if="!(layout.dmTargets?.length)" class="text-muted">{{ $t('storage.noDmTargets') }}</div>
           </div>
         </div>
 
@@ -66,7 +66,7 @@
                 </tr>
               </tbody>
             </table>
-            <div v-else class="text-muted">No RAID arrays</div>
+            <div v-else class="text-muted">{{ $t('storage.noRaidArrays') }}</div>
           </div>
         </div>
 
@@ -85,7 +85,7 @@
                 </tr>
               </tbody>
             </table>
-            <div v-else class="text-muted">No volume groups</div>
+            <div v-else class="text-muted">{{ $t('storage.noVolumeGroups') }}</div>
           </div>
         </div>
 
@@ -103,7 +103,7 @@
                 </tr>
               </tbody>
             </table>
-            <div v-else class="text-muted">No physical volumes</div>
+            <div v-else class="text-muted">{{ $t('storage.noPhysicalVolumes') }}</div>
           </div>
         </div>
 
@@ -121,7 +121,7 @@
                 </tr>
               </tbody>
             </table>
-            <div v-else class="text-muted">No logical volumes</div>
+            <div v-else class="text-muted">{{ $t('storage.noLogicalVolumes') }}</div>
           </div>
         </div>
       </div>
@@ -133,8 +133,8 @@
         <div class="col-12 col-xl-7">
           <div class="content-card">
             <div class="section-header">
-              <h3>现有 RAID Arrays</h3>
-              <button class="btn btn-sm btn-outline-light" @click="loadLayout">刷新</button>
+              <h3>{{ $t('storage.existingRaid') }}</h3>
+              <button class="btn btn-sm btn-outline-light" @click="loadLayout">{{ $t('common.refresh') }}</button>
             </div>
 
             <table v-if="layout.raidArrays?.length" class="table table-sm">
@@ -153,8 +153,8 @@
                   </td>
                   <td>
                     <ConfirmAction
-                      label="停止"
-                      confirm-text="停止此 RAID？"
+                      :label="$t('common.stop')"
+                      :confirm-text="$t('storage.stopRaid')"
                       :disabled="!layout.allowMutations"
                       @confirm="({ resolve, reject }) => stopRaid(r.name, resolve, reject)"
                     />
@@ -162,13 +162,13 @@
                 </tr>
               </tbody>
             </table>
-            <div v-else class="text-muted">No RAID arrays detected</div>
+            <div v-else class="text-muted">{{ $t('storage.noRaidArrays') }}</div>
           </div>
         </div>
 
         <div class="col-12 col-xl-5">
           <div class="content-card">
-            <h3 class="sub-title">创建 RAID Array</h3>
+            <h3 class="sub-title">{{ $t('storage.createRaid') }}</h3>
             <form class="d-grid gap-3" @submit.prevent="createRaid">
               <input v-model="raidForm.name" class="form-control" placeholder="/dev/md0" />
               <select v-model="raidForm.level" class="form-select">
@@ -182,14 +182,14 @@
               <input v-model.number="raidForm.chunkKb" type="number" class="form-control" placeholder="chunk size KB (default: 512)" />
               <label class="form-check">
                 <input v-model="raidForm.force" type="checkbox" class="form-check-input" />
-                <span class="form-check-label">Force (--run --force)</span>
+                <span class="form-check-label">{{ $t('common.force') }} (--run --force)</span>
               </label>
               <button class="btn btn-accent" :disabled="!layout.allowMutations || loading">
-                {{ loading ? '创建中...' : '创建 RAID' }}
+                {{ loading ? $t('common.creating') : $t('storage.createRaidBtn') }}
               </button>
             </form>
             <p class="text-muted mt-2" style="font-size: 0.8rem">
-              RAID 创建可能需要数分钟，请耐心等待。
+              {{ $t('storage.raidNote') }}
             </p>
           </div>
         </div>
@@ -199,7 +199,7 @@
     <!-- Tab 3: LVM -->
     <div v-if="activeTab === 'lvm'">
       <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-sm btn-outline-light" @click="loadLayout">刷新</button>
+        <button class="btn btn-sm btn-outline-light" @click="loadLayout">{{ $t('common.refresh') }}</button>
       </div>
 
       <!-- PV Section -->
@@ -216,8 +216,8 @@
                 <td>{{ pv.free }}</td>
                 <td>
                   <ConfirmAction
-                    label="移除"
-                    confirm-text="移除此 PV？"
+                    :label="$t('common.remove')"
+                    :confirm-text="$t('storage.removePVConfirm')"
                     :disabled="!layout.allowMutations || !!pv.vgName"
                     @confirm="({ resolve, reject }) => removePV(pv.name, resolve, reject)"
                   />
@@ -225,15 +225,15 @@
               </tr>
             </tbody>
           </table>
-          <div v-else class="text-muted mb-3">No physical volumes</div>
+          <div v-else class="text-muted mb-3">{{ $t('storage.noPhysicalVolumes') }}</div>
 
           <form class="d-flex gap-2 align-items-end" @submit.prevent="createPV">
             <input v-model="pvForm.device" class="form-control form-control-sm" placeholder="/dev/sdb" style="max-width: 300px" />
             <label class="form-check form-check-inline mb-0">
               <input v-model="pvForm.force" type="checkbox" class="form-check-input" />
-              <span class="form-check-label">Force</span>
+              <span class="form-check-label">{{ $t('common.force') }}</span>
             </label>
-            <button class="btn btn-sm btn-accent" :disabled="!layout.allowMutations || loading">创建 PV</button>
+            <button class="btn btn-sm btn-accent" :disabled="!layout.allowMutations || loading">{{ $t('storage.createPV') }}</button>
           </form>
         </div>
       </details>
@@ -253,8 +253,8 @@
                 <td>{{ vg.lvCount }}</td>
                 <td>
                   <ConfirmAction
-                    label="移除"
-                    confirm-text="移除此 VG？"
+                    :label="$t('common.remove')"
+                    :confirm-text="$t('storage.removeVGConfirm')"
                     :disabled="!layout.allowMutations || vg.lvCount > 0"
                     @confirm="({ resolve, reject }) => removeVG(vg.name, resolve, reject)"
                   />
@@ -262,12 +262,12 @@
               </tr>
             </tbody>
           </table>
-          <div v-else class="text-muted mb-3">No volume groups</div>
+          <div v-else class="text-muted mb-3">{{ $t('storage.noVolumeGroups') }}</div>
 
           <form class="d-flex gap-2 align-items-end" @submit.prevent="createVG">
             <input v-model="vgForm.name" class="form-control form-control-sm" placeholder="vg0" style="max-width: 200px" />
             <input v-model="vgDeviceInput" class="form-control form-control-sm" placeholder="/dev/sdb,/dev/sdc" style="max-width: 300px" />
-            <button class="btn btn-sm btn-accent" :disabled="!layout.allowMutations || loading">创建 VG</button>
+            <button class="btn btn-sm btn-accent" :disabled="!layout.allowMutations || loading">{{ $t('storage.createVG') }}</button>
           </form>
         </div>
       </details>
@@ -286,8 +286,8 @@
                 <td><code>{{ lv.attr }}</code></td>
                 <td class="d-flex gap-2">
                   <ConfirmAction
-                    label="移除"
-                    confirm-text="移除此 LV？"
+                    :label="$t('common.remove')"
+                    :confirm-text="$t('storage.removeLVConfirm')"
                     :disabled="!layout.allowMutations"
                     @confirm="({ resolve, reject }) => removeLV(lv.vgName, lv.name, resolve, reject)"
                   />
@@ -295,19 +295,19 @@
                     class="btn btn-sm btn-outline-secondary"
                     :disabled="!layout.allowMutations"
                     @click="openResize(lv)"
-                  >调整</button>
+                  >{{ $t('storage.resizeLabel') }}</button>
                 </td>
               </tr>
             </tbody>
           </table>
-          <div v-else class="text-muted mb-3">No logical volumes</div>
+          <div v-else class="text-muted mb-3">{{ $t('storage.noLogicalVolumes') }}</div>
 
           <!-- Resize inline form -->
           <div v-if="resizeTarget" class="alert alert-info d-flex gap-2 align-items-center mb-3">
-            <span>调整 <strong>{{ resizeTarget.vgName }}/{{ resizeTarget.name }}</strong>:</span>
+            <span>{{ $t('storage.resizeLabel') }} <strong>{{ resizeTarget.vgName }}/{{ resizeTarget.name }}</strong>:</span>
             <input v-model="resizeSize" class="form-control form-control-sm" placeholder="+10G or 500G" style="max-width: 200px" />
-            <button class="btn btn-sm btn-accent" :disabled="loading" @click="resizeLV">确定</button>
-            <button class="btn btn-sm btn-outline-secondary" @click="resizeTarget = null">取消</button>
+            <button class="btn btn-sm btn-accent" :disabled="loading" @click="resizeLV">{{ $t('common.ok') }}</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="resizeTarget = null">{{ $t('common.cancel') }}</button>
           </div>
 
           <!-- Create LV form -->
@@ -318,7 +318,7 @@
               <option v-for="vg in layout.volumeGroups || []" :key="vg.name" :value="vg.name">{{ vg.name }}</option>
             </select>
             <input v-model="lvForm.size" class="form-control form-control-sm" placeholder="100%FREE or 500G" style="max-width: 200px" />
-            <button class="btn btn-sm btn-accent" :disabled="!layout.allowMutations || loading">创建 LV</button>
+            <button class="btn btn-sm btn-accent" :disabled="!layout.allowMutations || loading">{{ $t('storage.createLV') }}</button>
           </form>
         </div>
       </details>
@@ -331,8 +331,8 @@
           <div class="content-card">
             <div class="section-header">
               <h3>Provision Plan</h3>
-              <span v-if="!layout.allowMutations" class="badge text-bg-warning">Preview Only</span>
-              <span v-else class="badge text-bg-success">Execution Ready</span>
+              <span v-if="!layout.allowMutations" class="badge text-bg-warning">{{ $t('storage.previewOnly') }}</span>
+              <span v-else class="badge text-bg-success">{{ $t('storage.executionReady') }}</span>
             </div>
 
             <form class="d-grid gap-3" @submit.prevent="previewPlan">
@@ -349,14 +349,14 @@
               <input v-model="provision.vgName" class="form-control" placeholder="vg name" />
               <input v-model="provision.metaLvName" class="form-control" placeholder="meta lv name" />
               <input v-model="provision.dataLvName" class="form-control" placeholder="data lv name" />
-              <button class="btn btn-accent">生成计划</button>
+              <button class="btn btn-accent">{{ $t('storage.generatePlan') }}</button>
             </form>
           </div>
         </div>
 
         <div class="col-12 col-xl-6">
           <div v-if="plan.commands?.length" class="content-card">
-            <h3 class="sub-title">执行计划</h3>
+            <h3 class="sub-title">{{ $t('storage.executePlan') }}</h3>
 
             <div v-if="plan.safetyChecks?.length" class="mb-3">
               <strong>Safety Checks:</strong>
@@ -379,8 +379,8 @@
 
             <div v-if="layout.allowMutations && plan.executionReady">
               <ConfirmAction
-                label="执行计划"
-                confirm-text="将执行以上所有命令，确定？"
+                :label="$t('storage.executePlan')"
+                :confirm-text="$t('storage.executePlanConfirm')"
                 button-class="btn btn-danger"
                 @confirm="({ resolve, reject }) => executePlan(resolve, reject)"
               />
@@ -390,9 +390,9 @@
           <!-- Execution results -->
           <div v-if="execResults" class="content-card mt-4">
             <h3 class="sub-title">
-              执行结果
+              {{ $t('storage.executionResult') }}
               <span :class="execResults.success ? 'badge text-bg-success' : 'badge text-bg-danger'" class="ms-2">
-                {{ execResults.success ? '全部成功' : '部分失败' }}
+                {{ execResults.success ? $t('storage.allSuccess') : $t('storage.partialFail') }}
               </span>
             </h3>
             <div v-for="(cr, idx) in execResults.results" :key="idx" class="mb-3 p-2 rounded" :class="cr.error ? 'bg-danger bg-opacity-10' : 'bg-success bg-opacity-10'">
@@ -411,16 +411,19 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import http from '../api/http'
 import AppShell from '../components/AppShell.vue'
 import ConfirmAction from '../components/ConfirmAction.vue'
 import MutationGuard from '../components/MutationGuard.vue'
 import { useAuthStore } from '../stores/auth'
+import { translateError } from '../i18n/errorMap'
 
 const LONG_TIMEOUT = { timeout: 120000 }
 
+const { t } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
 const layout = reactive({})
@@ -431,12 +434,12 @@ const loading = ref(false)
 const error = ref('')
 const success = ref('')
 
-const tabs = [
-  { key: 'topology', label: '拓扑总览', icon: 'bi bi-diagram-3' },
-  { key: 'raid', label: 'RAID 管理', icon: 'bi bi-hdd-rack' },
-  { key: 'lvm', label: 'LVM 管理', icon: 'bi bi-layers' },
-  { key: 'provision', label: 'Provision', icon: 'bi bi-tools' },
-]
+const tabs = computed(() => [
+  { key: 'topology', label: t('storage.tabs.topology'), icon: 'bi bi-diagram-3' },
+  { key: 'raid', label: t('storage.tabs.raid'), icon: 'bi bi-hdd-rack' },
+  { key: 'lvm', label: t('storage.tabs.lvm'), icon: 'bi bi-layers' },
+  { key: 'provision', label: t('storage.tabs.provision'), icon: 'bi bi-tools' },
+])
 
 // ── Forms ──────────────────────────────────────────────────────────
 
@@ -490,7 +493,7 @@ const loadLayout = async () => {
     const { data } = await http.get('/storage/layout')
     Object.assign(layout, data)
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
   }
 }
 
@@ -509,7 +512,7 @@ const createRaid = async () => {
     showSuccess('RAID array created successfully')
     await loadLayout()
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
   } finally {
     loading.value = false
   }
@@ -524,7 +527,7 @@ const stopRaid = async (name, resolve, reject) => {
     await loadLayout()
     resolve()
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
     reject(err)
   }
 }
@@ -540,7 +543,7 @@ const createPV = async () => {
     pvForm.force = false
     await loadLayout()
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
   } finally {
     loading.value = false
   }
@@ -554,7 +557,7 @@ const removePV = async (device, resolve, reject) => {
     await loadLayout()
     resolve()
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
     reject(err)
   }
 }
@@ -573,7 +576,7 @@ const createVG = async () => {
     vgDeviceInput.value = ''
     await loadLayout()
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
   } finally {
     loading.value = false
   }
@@ -587,7 +590,7 @@ const removeVG = async (name, resolve, reject) => {
     await loadLayout()
     resolve()
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
     reject(err)
   }
 }
@@ -607,7 +610,7 @@ const createLV = async () => {
     lvForm.size = ''
     await loadLayout()
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
   } finally {
     loading.value = false
   }
@@ -621,7 +624,7 @@ const removeLV = async (vgName, name, resolve, reject) => {
     await loadLayout()
     resolve()
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
     reject(err)
   }
 }
@@ -640,7 +643,7 @@ const resizeLV = async () => {
     resizeTarget.value = null
     await loadLayout()
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
   } finally {
     loading.value = false
   }
@@ -658,7 +661,7 @@ const previewPlan = async () => {
     const { data } = await http.post('/storage/workflows/provision/preview', payload)
     Object.assign(plan, data)
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
   }
 }
 
@@ -670,14 +673,14 @@ const executePlan = async (resolve, reject) => {
     }, LONG_TIMEOUT)
     execResults.value = data
     if (data.success) {
-      showSuccess('Provision plan executed successfully')
+      showSuccess(t('storage.provisionSuccess'))
     } else {
-      showError('Provision plan partially failed - see results below')
+      showError(t('storage.provisionFail'))
     }
     await loadLayout()
     resolve()
   } catch (err) {
-    showError(err.response?.data?.error || err.message)
+    showError(translateError(err.response?.data?.error, t) || err.message)
     reject(err)
   }
 }

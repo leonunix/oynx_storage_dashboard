@@ -1,0 +1,216 @@
+export default {
+  // ── Common ──
+  common: {
+    refresh: 'Refresh',
+    create: 'Create',
+    delete: 'Delete',
+    remove: 'Remove',
+    save: 'Save',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    loading: 'Loading...',
+    noData: 'No data',
+    writeOp: 'Write Op',
+    stop: 'Stop',
+    adjust: 'Resize',
+    ok: 'OK',
+    generating: 'Generating...',
+    creating: 'Creating...',
+    force: 'Force',
+  },
+
+  // ── AppShell ──
+  shell: {
+    brandCopy: 'From device orchestration to volume lifecycle, engine observability and audit — all in one control plane.',
+    currentUser: 'Current User',
+    notLoggedIn: 'Not logged in',
+    role: 'Role',
+    logout: 'Sign Out',
+    nav: {
+      overview: 'Overview',
+      storage: 'Storage',
+      config: 'Configuration',
+      volumes: 'Volumes',
+      metrics: 'Metrics',
+      audit: 'Audit',
+      users: 'Users & RBAC',
+    },
+  },
+
+  // ── LoginView ──
+  login: {
+    heroTitle: 'Clean, Reliable, Enterprise-Grade Storage Control Plane',
+    heroDesc: 'From device orchestration and volume lifecycle to engine status, audit and permission management — unified in a collaboration-friendly control plane.',
+    initGovernance: 'Init-as-Governance',
+    initGovernanceDesc: 'First boot requires creating an admin account — no default credentials.',
+    independentDB: 'Independent Control Plane DB',
+    independentDBDesc: 'Users, roles and audit use SQLite, decoupled from the Onyx data path.',
+    enterpriseTheme: 'Enterprise Theme',
+    enterpriseThemeDesc: 'Light, blue-green accent, clear hierarchy — built for long-term ops and teamwork.',
+    signIn: 'Sign In',
+    firstTimeSetup: 'First-Time Setup',
+    loginTitle: 'Control Plane Login',
+    initTitle: 'Initialize Admin Account',
+    loginDesc: 'Sign in to the control plane. LDAP / OIDC integration available later.',
+    initDesc: 'No users exist yet. Create the first admin account to get started.',
+    adminUsername: 'Admin Username',
+    displayName: 'Display Name',
+    initialPassword: 'Initial Password',
+    initializing: 'Initializing...',
+    completeInit: 'Complete Setup',
+    username: 'Username',
+    password: 'Password',
+    loggingIn: 'Signing in...',
+    enterDashboard: 'Enter Dashboard',
+    setupRequired: 'System not initialized. Please create an admin account first.',
+    loginFailed: 'Login failed',
+    initFailed: 'Initialization failed',
+  },
+
+  // ── OverviewView ──
+  overview: {
+    title: 'Engine Overview',
+    refreshStatus: 'Refresh Status',
+    volumeCountNote: 'Configured volume count',
+    zoneWorkersNote: 'Concurrent work units',
+    bufferFillNote: 'Watch closely near high watermark',
+    compressionRatio: 'Compression Ratio',
+    compressionNote: 'compress in / out',
+    dedupHitRate: 'Dedup Hit Rate',
+    dedupNote: 'dedup hits / total',
+    dataReduction: 'Data Reduction',
+    dataReductionNote: 'logical / physical (compress + dedup)',
+    keyMetrics: 'Key Metrics',
+    liveSnapshot: 'Live Snapshot',
+    modeNoteActive: 'IO active',
+    modeNoteStandby: 'metadata only',
+    modeNoteBare: 'IPC only',
+  },
+
+  // ── VolumesView ──
+  volumes: {
+    title: 'Volume Lifecycle',
+    createVolume: 'Create Volume',
+    existingVolumes: 'Existing Volumes',
+    noVolumes: 'No volumes',
+  },
+
+  // ── StorageView ──
+  storage: {
+    title: 'Storage Orchestration',
+    tabs: {
+      topology: 'Topology',
+      raid: 'RAID',
+      lvm: 'LVM',
+      provision: 'Provision',
+    },
+    noBlockDevices: 'No block devices detected',
+    noDmTargets: 'No dm targets',
+    noRaidArrays: 'No RAID arrays',
+    noVolumeGroups: 'No volume groups',
+    noPhysicalVolumes: 'No physical volumes',
+    noLogicalVolumes: 'No logical volumes',
+    existingRaid: 'Existing RAID Arrays',
+    createRaid: 'Create RAID Array',
+    stopRaid: 'Stop this RAID?',
+    raidNote: 'RAID creation may take several minutes. Please wait.',
+    createRaidBtn: 'Create RAID',
+    removePVConfirm: 'Remove this PV?',
+    createPV: 'Create PV',
+    removeVGConfirm: 'Remove this VG?',
+    createVG: 'Create VG',
+    removeLVConfirm: 'Remove this LV?',
+    createLV: 'Create LV',
+    resizeLabel: 'Resize',
+    executePlan: 'Execute Plan',
+    executePlanConfirm: 'This will execute all commands above. Proceed?',
+    generatePlan: 'Generate Plan',
+    executionResult: 'Execution Result',
+    allSuccess: 'All Succeeded',
+    partialFail: 'Partial Failure',
+    previewOnly: 'Preview Only',
+    executionReady: 'Execution Ready',
+    provisionSuccess: 'Provision plan executed successfully',
+    provisionFail: 'Provision plan partially failed — see results below',
+  },
+
+  // ── ConfigView ──
+  config: {
+    title: 'Engine Configuration',
+    configEdit: 'Configuration Editor',
+    engineStatus: 'Engine Status',
+    currentMode: 'Current Mode',
+    saving: 'Saving...',
+    saveConfig: 'Save Configuration',
+    reloading: 'Reloading...',
+    hotReload: 'Hot Reload (GC/Dedup)',
+    restarting: 'Restarting...',
+    restartService: 'Restart Service (shard/device changes)',
+    hotReloadNote: 'Hot reload: GC and Dedup parameters take effect immediately',
+    restartNote: 'Restart: shard count, device paths, zone_count require restart',
+    bareHint: 'Configure [meta] rocksdb_path and reload to enter standby mode',
+    standbyHint: 'Configure [storage] data_device and [buffer] device, then reload to enter active mode',
+    activeHint: 'Engine running — GC / Dedup parameters can be hot-reloaded',
+    unknownHint: 'Cannot connect to engine',
+    configSaved: 'Configuration saved',
+    loadFailed: 'Failed to load configuration',
+    saveFailed: 'Save failed',
+    restartStarted: 'Service restarting... please refresh the page shortly',
+    restartFailed: 'Restart failed',
+    reloadSuccess: 'Engine reloaded, current mode: {mode}',
+    reloadFailed: 'Reload failed',
+  },
+
+  // ── MetricsView ──
+  metrics: {
+    title: 'Metrics',
+  },
+
+  // ── AuditView ──
+  audit: {
+    title: 'Audit Log',
+    recentEvents: 'Recent Events',
+  },
+
+  // ── UsersView ──
+  users: {
+    title: 'Users & RBAC',
+    createUser: 'Create User',
+    rolePermissions: 'Role Permissions',
+    userList: 'User List',
+    noUsers: 'No users',
+    resetPassword: 'Reset Password',
+    resetPasswordPrompt: 'Set new password for {username}',
+  },
+
+  // ── ConfirmAction ──
+  confirmAction: {
+    defaultLabel: 'Delete',
+    defaultConfirmText: 'Are you sure you want to proceed?',
+    confirm: 'Confirm',
+    cancel: 'Cancel',
+  },
+
+  // ── MutationGuard ──
+  mutationGuard: {
+    warning: 'Storage mutations are disabled in this environment. To enable, set',
+  },
+
+  // ── Backend Errors ──
+  errors: {
+    unknown: 'Unknown error',
+    notFound: 'Not found',
+    invalidRequestBody: 'Invalid request body',
+    setupRequired: 'System not initialized',
+    invalidCredentials: 'Invalid username or password',
+    failedToIssueToken: 'Failed to issue token',
+    missingBearerToken: 'Missing bearer token',
+    invalidToken: 'Invalid token',
+    unauthenticated: 'Unauthenticated',
+    permissionDenied: 'Permission denied',
+    userDisabled: 'User is disabled',
+    usernameRequired: 'Username is required',
+    passwordRequired: 'Password is required',
+    alreadyInitialized: 'Dashboard already initialized',
+  },
+}

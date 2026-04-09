@@ -1,10 +1,10 @@
 <template>
-  <AppShell title="用户与权限" eyebrow="RBAC Administration" :user="auth.user" @logout="logout">
+  <AppShell title="users.title" eyebrow="RBAC Administration" :user="auth.user" @logout="logout">
     <div class="row g-4">
       <div class="col-12 col-xl-5">
         <div class="content-card">
           <div class="section-header">
-            <h3>创建用户</h3>
+            <h3>{{ $t('users.createUser') }}</h3>
             <span class="badge text-bg-info">SQLite</span>
           </div>
 
@@ -15,14 +15,14 @@
               <option v-for="role in roles" :key="role.name" :value="role.name">{{ role.name }}</option>
             </select>
             <input v-model="createForm.password" type="password" class="form-control" placeholder="initial password" />
-            <button class="btn btn-accent">创建用户</button>
+            <button class="btn btn-accent">{{ $t('users.createUser') }}</button>
           </form>
         </div>
 
         <div class="content-card mt-4">
           <div class="section-header">
-            <h3>角色权限</h3>
-            <button class="btn btn-sm btn-outline-light" @click="loadRoles">刷新</button>
+            <h3>{{ $t('users.rolePermissions') }}</h3>
+            <button class="btn btn-sm btn-outline-light" @click="loadRoles">{{ $t('common.refresh') }}</button>
           </div>
           <div class="timeline">
             <div v-for="role in roles" :key="role.name" class="timeline-item">
@@ -40,8 +40,8 @@
       <div class="col-12 col-xl-7">
         <div class="content-card">
           <div class="section-header">
-            <h3>用户列表</h3>
-            <button class="btn btn-sm btn-outline-light" @click="loadUsers">刷新</button>
+            <h3>{{ $t('users.userList') }}</h3>
+            <button class="btn btn-sm btn-outline-light" @click="loadUsers">{{ $t('common.refresh') }}</button>
           </div>
 
           <div class="table-responsive">
@@ -90,13 +90,13 @@
                   </td>
                   <td class="text-end">
                     <div class="d-flex gap-2 justify-content-end">
-                      <button class="btn btn-sm btn-outline-light" @click="saveUser(user.username)">保存</button>
-                      <button class="btn btn-sm btn-outline-warning" @click="resetPassword(user.username)">重置密码</button>
+                      <button class="btn btn-sm btn-outline-light" @click="saveUser(user.username)">{{ $t('common.save') }}</button>
+                      <button class="btn btn-sm btn-outline-warning" @click="resetPassword(user.username)">{{ $t('users.resetPassword') }}</button>
                     </div>
                   </td>
                 </tr>
                 <tr v-if="users.length === 0">
-                  <td colspan="5" class="text-center text-secondary py-4">暂无用户</td>
+                  <td colspan="5" class="text-center text-secondary py-4">{{ $t('users.noUsers') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -109,11 +109,13 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import http from '../api/http'
 import AppShell from '../components/AppShell.vue'
 import { useAuthStore } from '../stores/auth'
 
+const { t } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
 const users = ref([])
@@ -172,7 +174,7 @@ const saveUser = async (username) => {
 }
 
 const resetPassword = async (username) => {
-  const password = window.prompt(`为 ${username} 设置新密码`)
+  const password = window.prompt(t('users.resetPasswordPrompt', { username }))
   if (!password) {
     return
   }

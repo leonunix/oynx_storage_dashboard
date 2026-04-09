@@ -1,7 +1,7 @@
 <template>
-  <AppShell title="Metrics" eyebrow="Pipeline Telemetry" :user="auth.user" @logout="logout">
+  <AppShell title="metrics.title" eyebrow="Pipeline Telemetry" :user="auth.user" @logout="logout">
     <template #header-actions>
-      <button class="btn btn-accent" @click="load">刷新</button>
+      <button class="btn btn-accent" @click="load">{{ $t('common.refresh') }}</button>
     </template>
 
     <div class="row g-4">
