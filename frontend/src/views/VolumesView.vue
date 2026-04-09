@@ -27,7 +27,7 @@
             <button class="btn btn-sm btn-outline-light" @click="load">刷新</button>
           </div>
           <div class="table-responsive">
-            <table class="table table-dark align-middle">
+            <table class="table align-middle">
               <thead>
                 <tr>
                   <th>Name</th>

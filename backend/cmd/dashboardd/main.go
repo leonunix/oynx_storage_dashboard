@@ -9,7 +9,10 @@ import (
 
 func main() {
 	cfg := config.Load()
-	server := app.NewServer(cfg)
+	server, err := app.NewServer(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	log.Printf("onyx dashboard backend listening on %s", cfg.Server.Address)
 	if err := server.ListenAndServe(); err != nil {

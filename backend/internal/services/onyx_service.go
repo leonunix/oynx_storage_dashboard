@@ -3,6 +3,7 @@ package services
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -192,7 +193,7 @@ func (s *OnyxService) sendSocketCommand(command string) ([]string, error) {
 			continue
 		}
 		if strings.HasPrefix(line, "error:") {
-			return nil, fmt.Errorf(strings.TrimSpace(strings.TrimPrefix(line, "error:")))
+			return nil, errors.New(strings.TrimSpace(strings.TrimPrefix(line, "error:")))
 		}
 		lines = append(lines, line)
 	}

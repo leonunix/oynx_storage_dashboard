@@ -30,6 +30,17 @@ var rolePermissions = map[string][]domain.Permission{
 	},
 }
 
+func RoleDefinitions() []domain.RoleDefinition {
+	out := make([]domain.RoleDefinition, 0, len(rolePermissions))
+	for role, permissions := range rolePermissions {
+		out = append(out, domain.RoleDefinition{
+			Name:        role,
+			Permissions: permissions,
+		})
+	}
+	return out
+}
+
 func PermissionsForRole(role string) []domain.Permission {
 	if permissions, ok := rolePermissions[role]; ok {
 		return permissions

@@ -25,7 +25,7 @@ func NewRouter(deps RouterDependencies) http.Handler {
 	router.Use(middleware.Recoverer)
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   deps.AllowedOrigins,
-		AllowedMethods:   []string{"GET", "POST", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -36,6 +36,8 @@ func NewRouter(deps RouterDependencies) http.Handler {
 	})
 
 	router.Route("/api/v1", func(r chi.Router) {
+		r.Get("/setup/status", deps.Handlers.GetSetupStatus)
+		r.Post("/setup/initialize", deps.Handlers.InitializeSetup)
 		r.Post("/auth/login", deps.Handlers.Login)
 
 		r.Group(func(protected chi.Router) {
@@ -51,6 +53,11 @@ func NewRouter(deps RouterDependencies) http.Handler {
 			protected.With(appmw.RequirePermission("storage:read")).Get("/storage/layout", deps.Handlers.StorageLayout)
 			protected.With(appmw.RequirePermission("storage:write")).Post("/storage/workflows/provision/preview", deps.Handlers.ProvisionPreview)
 			protected.With(appmw.RequirePermission("audit:read")).Get("/audit/events", deps.Handlers.ListAuditEvents)
+			protected.With(appmw.RequirePermission("users:manage")).Get("/users", deps.Handlers.ListUsers)
+			protected.With(appmw.RequirePermission("users:manage")).Post("/users", deps.Handlers.CreateUser)
+			protected.With(appmw.RequirePermission("users:manage")).Patch("/users/{username}", deps.Handlers.UpdateUser)
+			protected.With(appmw.RequirePermission("users:manage")).Post("/users/{username}/reset-password", deps.Handlers.ResetUserPassword)
+			protected.With(appmw.RequirePermission("users:manage")).Get("/roles", deps.Handlers.ListRoles)
 		})
 	})
 

@@ -16,7 +16,7 @@ Vue Dashboard
   v
 Go Control Plane API
   |- Auth / RBAC
-  |- Audit Log
+  |- Audit Log (GORM + SQLite)
   |- Onyx Adapter
   |- Storage Provision Workflow
   |- Metrics Aggregation
@@ -48,7 +48,11 @@ Go Control Plane API
 - `internal/auth`
   - JWT
   - 角色与权限矩阵
-  - bootstrap user，后续可替换成 LDAP/OIDC
+  - 首次启动初始化管理员
+  - 后续可替换成 LDAP/OIDC
+- `internal/store`
+  - GORM + SQLite 连接与建表
+  - dashboard 自身控制面数据持久化
 - `internal/services/onyx_service.go`
   - 通过 Unix socket / CLI 管理 Onyx volumes
   - 汇总 `status` 输出
@@ -56,8 +60,8 @@ Go Control Plane API
   - 读取 `lsblk` / `dmsetup` / `lvs`
   - 生成存储编排计划
 - `internal/services/audit_service.go`
-  - 当前是内存审计
-  - 后续建议落 RocksDB / PostgreSQL / Loki
+  - 当前通过 GORM 落 SQLite
+  - 后续可扩展到 PostgreSQL / Loki
 - `internal/api`
   - REST API 边界
   - 供前端与第三方自动化系统共用
@@ -67,6 +71,25 @@ Go Control Plane API
 - Dashboard 以后很可能需要 OIDC、Prometheus、多节点 agent、审批流
 - 前后端分离后 API 天然可复用
 - Go 后端更适合做控制面和系统命令编排，不把 Rust 数据路径拉进 Web 依赖中
+
+## 为什么 dashboard 用 GORM + SQLite
+
+- dashboard 有一部分数据天然属于控制面，而不是存储引擎数据面
+- 用户、RBAC、审计日志需要持久化，但规模通常不大
+- SQLite 部署简单，单节点 dashboard 起步成本最低
+- GORM 能让后续切 PostgreSQL 更平滑
+
+当前建议边界：
+
+- `onyx-storage`:
+  - volume metadata
+  - blockmap / refcount / dedup metadata
+  - 数据路径状态
+- dashboard database:
+  - users
+  - role bindings
+  - audit events
+  - future: jobs / approvals / node inventory
 
 ## 关于 Go 是否适合操作 dm / LVM
 

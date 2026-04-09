@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Server     ServerConfig
 	Auth       AuthConfig
+	Database   DatabaseConfig
 	Onyx       OnyxConfig
 	Command    CommandConfig
 	Operations OperationsConfig
@@ -26,6 +27,10 @@ type AuthConfig struct {
 	BootstrapUsername string
 	BootstrapPassword string
 	BootstrapRole     string
+}
+
+type DatabaseConfig struct {
+	Path string
 }
 
 type OnyxConfig struct {
@@ -54,6 +59,9 @@ func Load() Config {
 			BootstrapUsername: getenv("ONYX_DASHBOARD_ADMIN_USER", "admin"),
 			BootstrapPassword: getenv("ONYX_DASHBOARD_ADMIN_PASSWORD", "onyx-admin"),
 			BootstrapRole:     getenv("ONYX_DASHBOARD_ADMIN_ROLE", "admin"),
+		},
+		Database: DatabaseConfig{
+			Path: getenv("ONYX_DASHBOARD_DB_PATH", "var/dashboard.db"),
 		},
 		Onyx: OnyxConfig{
 			ConfigPath: getenv("ONYX_STORAGE_CONFIG", "config/default.toml"),

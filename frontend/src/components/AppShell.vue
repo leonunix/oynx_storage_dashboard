@@ -10,7 +10,7 @@
       </div>
 
       <nav class="nav-stack">
-        <RouterLink v-for="item in items" :key="item.to" :to="item.to" class="nav-link-card">
+        <RouterLink v-for="item in visibleItems" :key="item.to" :to="item.to" class="nav-link-card">
           <i :class="item.icon"></i>
           <span>{{ item.label }}</span>
         </RouterLink>
@@ -42,9 +42,10 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
-defineProps({
+const props = defineProps({
   title: { type: String, required: true },
   eyebrow: { type: String, default: 'Onyx Control Plane' },
   user: { type: Object, default: null },
@@ -53,10 +54,16 @@ defineProps({
 defineEmits(['logout'])
 
 const items = [
-  { to: '/overview', label: '总览', icon: 'bi bi-speedometer2' },
-  { to: '/storage', label: '存储编排', icon: 'bi bi-diagram-3' },
-  { to: '/volumes', label: 'Volumes', icon: 'bi bi-hdd-stack' },
-  { to: '/metrics', label: 'Metrics', icon: 'bi bi-activity' },
-  { to: '/audit', label: '审计', icon: 'bi bi-journal-text' },
+  { to: '/overview', label: '总览', icon: 'bi bi-speedometer2', permission: 'overview:read' },
+  { to: '/storage', label: '存储编排', icon: 'bi bi-diagram-3', permission: 'storage:read' },
+  { to: '/volumes', label: 'Volumes', icon: 'bi bi-hdd-stack', permission: 'volumes:read' },
+  { to: '/metrics', label: 'Metrics', icon: 'bi bi-activity', permission: 'metrics:read' },
+  { to: '/audit', label: '审计', icon: 'bi bi-journal-text', permission: 'audit:read' },
+  { to: '/users', label: '用户与权限', icon: 'bi bi-people', permission: 'users:manage' },
 ]
+
+const visibleItems = computed(() => {
+  const permissions = props.user?.permissions || []
+  return items.filter((item) => permissions.includes(item.permission))
+})
 </script>

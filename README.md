@@ -18,6 +18,15 @@ dashboard/
 - 提供统一权限控制、审计日志、可回溯的操作记录
 - 保持前后端分离，便于以后对接 agent、OIDC、Prometheus 和多节点集群
 
+## 技术选型
+
+- 后端: Go + Chi + GORM + SQLite
+- 前端: Vue 3 + Bootstrap 5
+- 实时引擎数据: `onyx-storage` Unix socket IPC / CLI bridge
+
+SQLite 只承接 dashboard 自己的控制面数据，例如用户、角色映射、审计日志。
+Onyx 的 block metadata 和数据路径仍然由主引擎自己的 RocksDB / 设备层负责。
+
 ## 本地开发
 
 后端：
@@ -42,10 +51,16 @@ npm run dev
 - 后端: `http://localhost:8080`
 - 前端: `http://localhost:5173`
 
-默认 bootstrap 账户：
+首次启动：
 
-- 用户名: `admin`
-- 密码: `onyx-admin`
+- 默认要求先完成初始化
+- 初始化页面会建议管理员用户名为 `admin`
+- 初始化完成后才允许登录
+
+默认数据库：
+
+- 路径: `dashboard/backend/var/dashboard.db`
+- 配置项: `ONYX_DASHBOARD_DB_PATH`
 
 ## 当前集成方式
 

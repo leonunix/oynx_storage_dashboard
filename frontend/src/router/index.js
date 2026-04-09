@@ -5,6 +5,7 @@ import VolumesView from '../views/VolumesView.vue'
 import StorageView from '../views/StorageView.vue'
 import MetricsView from '../views/MetricsView.vue'
 import AuditView from '../views/AuditView.vue'
+import UsersView from '../views/UsersView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -14,6 +15,7 @@ const routes = [
   { path: '/volumes', name: 'volumes', component: VolumesView },
   { path: '/metrics', name: 'metrics', component: MetricsView },
   { path: '/audit', name: 'audit', component: AuditView },
+  { path: '/users', name: 'users', component: UsersView },
 ]
 
 const router = createRouter({

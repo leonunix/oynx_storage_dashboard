@@ -19,14 +19,14 @@
 
           <h4 class="sub-title">dm Targets</h4>
           <div class="list-group list-group-flush">
-            <div v-for="item in layout.dmTargets || []" :key="item.name" class="list-group-item bg-transparent text-light">
+            <div v-for="item in layout.dmTargets || []" :key="item.name" class="list-group-item bg-transparent">
               {{ item.name }}
             </div>
           </div>
 
           <h4 class="sub-title mt-4">LVM</h4>
           <div class="list-group list-group-flush">
-            <div v-for="item in layout.logicalVolumes || []" :key="`${item.vgName}-${item.name}`" class="list-group-item bg-transparent text-light">
+            <div v-for="item in layout.logicalVolumes || []" :key="`${item.vgName}-${item.name}`" class="list-group-item bg-transparent">
               {{ item.vgName }}/{{ item.name }} · {{ item.size }} · {{ item.attr }}
             </div>
           </div>

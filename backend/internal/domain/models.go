@@ -20,6 +20,7 @@ type User struct {
 	DisplayName string       `json:"displayName"`
 	Role        string       `json:"role"`
 	Permissions []Permission `json:"permissions"`
+	Disabled    bool         `json:"disabled"`
 }
 
 type LoginRequest struct {
@@ -30,6 +31,40 @@ type LoginRequest struct {
 type LoginResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`
+}
+
+type SetupStatus struct {
+	Initialized       bool   `json:"initialized"`
+	SuggestedUsername string `json:"suggestedUsername,omitempty"`
+	SuggestedRole     string `json:"suggestedRole,omitempty"`
+}
+
+type SetupInitializeRequest struct {
+	Username    string `json:"username"`
+	DisplayName string `json:"displayName"`
+	Password    string `json:"password"`
+}
+
+type UserCreateRequest struct {
+	Username    string `json:"username"`
+	DisplayName string `json:"displayName"`
+	Role        string `json:"role"`
+	Password    string `json:"password"`
+}
+
+type UserUpdateRequest struct {
+	DisplayName *string `json:"displayName"`
+	Role        *string `json:"role"`
+	Disabled    *bool   `json:"disabled"`
+}
+
+type UserPasswordResetRequest struct {
+	Password string `json:"password"`
+}
+
+type RoleDefinition struct {
+	Name        string       `json:"name"`
+	Permissions []Permission `json:"permissions"`
 }
 
 type AuditEvent struct {
