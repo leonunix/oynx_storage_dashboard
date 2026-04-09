@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"io/fs"
 	"net/http"
 
 	"github.com/leonunix/onyx_storage/dashboard/backend/internal/api"
@@ -12,6 +13,7 @@ import (
 	"github.com/leonunix/onyx_storage/dashboard/backend/internal/services"
 	"github.com/leonunix/onyx_storage/dashboard/backend/internal/store"
 	"github.com/leonunix/onyx_storage/dashboard/backend/internal/system"
+	"github.com/leonunix/onyx_storage/dashboard/backend/internal/ui"
 )
 
 func NewServer(cfg config.Config) (*http.Server, error) {
@@ -50,10 +52,17 @@ func NewServer(cfg config.Config) (*http.Server, error) {
 		},
 	}
 
+	// Embed frontend dist/ as SPA — sub to strip the "dist" prefix
+	var frontendFS fs.FS
+	if sub, err := fs.Sub(ui.DistFS, "dist"); err == nil {
+		frontendFS = sub
+	}
+
 	router := api.NewRouter(api.RouterDependencies{
 		AllowedOrigins: cfg.Server.AllowedOrigins,
 		Handlers:       handlers,
 		AuthMiddleware: appmw.Authenticator(jwtManager),
+		FrontendFS:     frontendFS,
 	})
 
 	return &http.Server{

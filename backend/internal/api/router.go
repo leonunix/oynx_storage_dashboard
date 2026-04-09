@@ -2,7 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"io/fs"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -15,6 +17,7 @@ type RouterDependencies struct {
 	AllowedOrigins []string
 	Handlers       *Handlers
 	AuthMiddleware func(http.Handler) http.Handler
+	FrontendFS     fs.FS // embedded frontend dist (nil = no static serving)
 }
 
 func NewRouter(deps RouterDependencies) http.Handler {
@@ -84,6 +87,33 @@ func NewRouter(deps RouterDependencies) http.Handler {
 			protected.With(appmw.RequirePermission("users:manage")).Get("/roles", deps.Handlers.ListRoles)
 		})
 	})
+
+	// Embedded SPA frontend: serve static files, fallback to index.html
+	if deps.FrontendFS != nil {
+		fileServer := http.FileServer(http.FS(deps.FrontendFS))
+		router.NotFound(func(w http.ResponseWriter, r *http.Request) {
+			// API routes that didn't match → 404 JSON
+			if strings.HasPrefix(r.URL.Path, "/api/") {
+				writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+				return
+			}
+
+			// Try to serve the exact file
+			path := strings.TrimPrefix(r.URL.Path, "/")
+			if path == "" {
+				path = "index.html"
+			}
+			if f, err := deps.FrontendFS.Open(path); err == nil {
+				f.Close()
+				fileServer.ServeHTTP(w, r)
+				return
+			}
+
+			// SPA fallback: serve index.html for client-side routing
+			r.URL.Path = "/"
+			fileServer.ServeHTTP(w, r)
+		})
+	}
 
 	return router
 }
