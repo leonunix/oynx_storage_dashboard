@@ -148,6 +148,15 @@ const fmtPercent = (v) => {
   return (v * 100).toFixed(1) + '%'
 }
 
+const fmtTinyUsagePercent = (used, total) => {
+  if (!total) return '-'
+  const pct = (used / total) * 100
+  if (pct === 0) return '0.0%'
+  if (pct >= 1) return pct.toFixed(1) + '%'
+  if (pct >= 0.01) return pct.toFixed(3) + '%'
+  return '<0.001%'
+}
+
 const modeNote = computed(() => {
   switch (overview.engineMode) {
     case 'active': return t('overview.modeNoteActive')
@@ -162,8 +171,8 @@ const allocatorUsage = computed(() => {
   const total = overview.allocatorTotalBlocks
   if (!total) return '-'
   const used = total - free
-  const pct = ((used / total) * 100).toFixed(1)
-  return `${pct}% (${used}/${total})`
+  const pct = fmtTinyUsagePercent(used, total)
+  return `${pct} (${used}/${total})`
 })
 
 const fmtSize = (bytes) => {

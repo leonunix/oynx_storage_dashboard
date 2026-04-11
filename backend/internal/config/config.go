@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/BurntSushi/toml"
 )
 
 type Config struct {
@@ -49,6 +51,7 @@ type OperationsConfig struct {
 }
 
 func Load() Config {
+	onyxConfigPath := getenv("ONYX_STORAGE_CONFIG", "config/default.toml")
 	return Config{
 		Server: ServerConfig{
 			Address:        getenv("ONYX_DASHBOARD_ADDR", ":8080"),
@@ -65,9 +68,9 @@ func Load() Config {
 			Path: getenv("ONYX_DASHBOARD_DB_PATH", "var/dashboard.db"),
 		},
 		Onyx: OnyxConfig{
-			ConfigPath: getenv("ONYX_STORAGE_CONFIG", "config/default.toml"),
+			ConfigPath: onyxConfigPath,
 			BinaryPath: getenv("ONYX_STORAGE_BIN", "onyx-storage"),
-			SocketPath: getenv("ONYX_STORAGE_SOCKET", "/var/run/onyx-storage.sock"),
+			SocketPath: getenv("ONYX_STORAGE_SOCKET", detectOnyxSocketPath(onyxConfigPath)),
 		},
 		Command: CommandConfig{
 			ExecTimeout:      time.Duration(getenvInt("ONYX_DASHBOARD_EXEC_TIMEOUT_SECONDS", 10)) * time.Second,
@@ -77,6 +80,31 @@ func Load() Config {
 			AllowDestructiveDM: getenvBool("ONYX_DASHBOARD_ALLOW_DM_MUTATIONS", false),
 		},
 	}
+}
+
+func detectOnyxSocketPath(configPath string) string {
+	const fallback = "/var/run/onyx-storage.sock"
+
+	type serviceSection struct {
+		SocketPath string `toml:"socket_path"`
+	}
+	type onyxToml struct {
+		Service serviceSection `toml:"service"`
+	}
+
+	if strings.TrimSpace(configPath) == "" {
+		return fallback
+	}
+
+	var cfg onyxToml
+	if _, err := toml.DecodeFile(configPath, &cfg); err != nil {
+		return fallback
+	}
+
+	if path := strings.TrimSpace(cfg.Service.SocketPath); path != "" {
+		return path
+	}
+	return fallback
 }
 
 func getenv(key, fallback string) string {
