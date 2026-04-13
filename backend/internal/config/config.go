@@ -14,6 +14,7 @@ type Config struct {
 	Auth       AuthConfig
 	Database   DatabaseConfig
 	Onyx       OnyxConfig
+	Metrics    MetricsConfig
 	Command    CommandConfig
 	Operations OperationsConfig
 }
@@ -39,6 +40,13 @@ type OnyxConfig struct {
 	ConfigPath string
 	BinaryPath string
 	SocketPath string
+}
+
+type MetricsConfig struct {
+	DataPath          string
+	SampleInterval    time.Duration
+	Retention         time.Duration
+	PartitionDuration time.Duration
 }
 
 type CommandConfig struct {
@@ -71,6 +79,12 @@ func Load() Config {
 			ConfigPath: onyxConfigPath,
 			BinaryPath: getenv("ONYX_STORAGE_BIN", "onyx-storage"),
 			SocketPath: getenv("ONYX_STORAGE_SOCKET", detectOnyxSocketPath(onyxConfigPath)),
+		},
+		Metrics: MetricsConfig{
+			DataPath:          getenv("ONYX_DASHBOARD_METRICS_DATA_PATH", "var/metrics-tsdb"),
+			SampleInterval:    time.Duration(getenvInt("ONYX_DASHBOARD_METRICS_SAMPLE_INTERVAL_SECONDS", 60)) * time.Second,
+			Retention:         time.Duration(getenvInt("ONYX_DASHBOARD_METRICS_RETENTION_HOURS", 24*14)) * time.Hour,
+			PartitionDuration: time.Duration(getenvInt("ONYX_DASHBOARD_METRICS_PARTITION_HOURS", 24)) * time.Hour,
 		},
 		Command: CommandConfig{
 			ExecTimeout:      time.Duration(getenvInt("ONYX_DASHBOARD_EXEC_TIMEOUT_SECONDS", 10)) * time.Second,

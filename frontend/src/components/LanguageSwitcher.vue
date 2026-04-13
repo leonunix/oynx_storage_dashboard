@@ -20,21 +20,20 @@ function toggle() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
+  width: 34px;
   height: 28px;
-  border: 1px solid rgba(46, 111, 206, 0.18);
-  border-radius: 6px;
-  background: #ffffff;
-  color: var(--onyx-primary, #2e6fce);
-  font-size: 0.78rem;
+  border: 1px solid var(--onyx-border);
+  border-radius: var(--onyx-radius-xs);
+  background: var(--onyx-surface);
+  color: var(--onyx-text-secondary);
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: 0.02em;
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .lang-switcher:hover {
-  background: var(--onyx-primary-soft, #dceafe);
-  border-color: rgba(46, 111, 206, 0.32);
+  background: var(--onyx-surface-soft);
+  border-color: #cbd5e1;
 }
 </style>

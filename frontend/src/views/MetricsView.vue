@@ -1,50 +1,244 @@
 <template>
-  <AppShell title="metrics.title" eyebrow="Pipeline Telemetry" :user="auth.user" @logout="logout">
+  <AppShell title="metrics.title" eyebrow="Minute-level Telemetry" :user="auth.user" @logout="logout">
     <template #header-actions>
-      <button class="btn btn-accent" @click="load">{{ $t('common.refresh') }}</button>
+      <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+        <div class="window-switch">
+          <button
+            v-for="item in telemetryWindows"
+            :key="item.key"
+            class="btn btn-sm"
+            :class="selectedWindow === item.key ? 'btn-accent' : 'btn-outline-light'"
+            @click="selectWindow(item.key)"
+          >
+            {{ item.label }}
+          </button>
+        </div>
+        <span class="badge text-bg-dark">Auto refresh 20s</span>
+        <button class="btn btn-accent" @click="load">{{ $t('common.refresh') }}</button>
+      </div>
     </template>
 
-    <div class="row g-4 mb-1">
-      <div v-for="lane in ioRateCards" :key="lane.key" class="col-12 col-lg-4">
-        <div class="content-card h-100">
-          <div class="section-header">
+    <FlowPipeline :snapshot="latest" :rates="telemetry.rates" :window-label="windowLabel" />
+
+    <div class="lane-grid">
+      <div v-for="lane in laneCards" :key="lane.key" class="content-card lane-card">
+        <div class="lane-head">
+          <div>
+            <div class="tiny-label">{{ lane.kicker }}</div>
             <h3>{{ lane.title }}</h3>
-            <span class="badge text-bg-dark">{{ rateWindowLabel }}</span>
           </div>
-          <p class="lane-note">{{ lane.note }}</p>
-          <div class="rate-grid">
-            <div class="rate-item">
-              <span>read throughput</span>
-              <strong>{{ lane.readThroughput }}</strong>
-            </div>
-            <div class="rate-item">
-              <span>read IOPS</span>
-              <strong>{{ lane.readIops }}</strong>
-            </div>
-            <div class="rate-item">
-              <span>write throughput</span>
-              <strong>{{ lane.writeThroughput }}</strong>
-            </div>
-            <div class="rate-item">
-              <span>write IOPS</span>
-              <strong>{{ lane.writeIops }}</strong>
-            </div>
+          <div class="lane-icon" :style="{ color: lane.color, background: lane.glow }">
+            <i :class="lane.icon"></i>
           </div>
         </div>
+        <p class="chart-note">{{ lane.note }}</p>
+        <div class="lane-stats">
+          <div>
+            <span>Read</span>
+            <strong>{{ lane.read }}</strong>
+          </div>
+          <div>
+            <span>Write</span>
+            <strong>{{ lane.write }}</strong>
+          </div>
+        </div>
+        <TrendChart compact :height="82" :series="lane.series" />
       </div>
     </div>
 
     <div class="row g-4">
-      <div v-for="group in metricGroups" :key="group.title" class="col-12 col-xl-6">
-        <div class="content-card">
+      <div class="col-12 col-xl-6">
+        <div class="content-card chart-card">
           <div class="section-header">
-            <h3>{{ group.title }}</h3>
-          </div>
-          <div class="metric-list">
-            <div v-for="item in group.items" :key="item.key" class="metric-row">
-              <span>{{ item.label }}</span>
-              <code>{{ item.value }}</code>
+            <div>
+              <h3>Write throughput</h3>
+              <p class="chart-note">Logical ingest, buffer absorb and durable LV3 writes on one scale.</p>
             </div>
+            <span class="badge text-bg-dark">{{ windowLabel }}</span>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in writeThroughputSeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="writeThroughputSeries" :height="270" format="bytesRate" />
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-6">
+        <div class="content-card chart-card">
+          <div class="section-header">
+            <div>
+              <h3>Read throughput</h3>
+              <p class="chart-note">Read demand, buffer hits and LV3 fallthrough now stay readable on the same unit.</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in readThroughputSeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="readThroughputSeries" :height="270" format="bytesRate" />
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-6">
+        <div class="content-card chart-card">
+          <div class="section-header">
+            <div>
+              <h3>Write IOPS</h3>
+              <p class="chart-note">When throughput is steady but latency is not, this is usually the next chart to check.</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in writeIopsSeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="writeIopsSeries" :height="240" format="opsRate" />
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-6">
+        <div class="content-card chart-card">
+          <div class="section-header">
+            <div>
+              <h3>Read IOPS</h3>
+              <p class="chart-note">Separating reads from writes keeps the scale from collapsing into noise.</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in readIopsSeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="readIopsSeries" :height="240" format="opsRate" />
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-4">
+        <div class="content-card chart-card">
+          <div class="section-header">
+            <div>
+              <h3>Buffer fill</h3>
+              <p class="chart-note">Pure percentage chart, no queue depth mixed in.</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in bufferFillSeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="bufferFillSeries" :height="220" format="percent" />
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-4">
+        <div class="content-card chart-card">
+          <div class="section-header">
+            <div>
+              <h3>Pending entries</h3>
+              <p class="chart-note">Queue depth rendered alone, so spikes are finally obvious.</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in pendingEntriesSeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="pendingEntriesSeries" :height="220" format="number" />
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-4">
+        <div class="content-card chart-card">
+          <div class="section-header">
+            <div>
+              <h3>Payload memory</h3>
+              <p class="chart-note">Resident buffer bytes get their own scale now.</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in payloadBytesSeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="payloadBytesSeries" :height="220" format="bytes" />
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-6">
+        <div class="content-card chart-card">
+          <div class="section-header">
+            <div>
+              <h3>Reduction ratios</h3>
+              <p class="chart-note">Compression and total reduction share a ratio scale, so they can be compared directly.</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in ratioSeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="ratioSeries" :height="220" baseline="fit" format="ratio" />
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-6">
+        <div class="content-card chart-card">
+          <div class="section-header">
+            <div>
+              <h3>Dedup hit rate</h3>
+              <p class="chart-note">A single percent chart reads much better than mixing it into ratios.</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in dedupRateSeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="dedupRateSeries" :height="220" baseline="fit" format="percent" />
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="content-card chart-card">
+          <div class="section-header">
+            <div>
+              <h3>Background activity</h3>
+              <p class="chart-note">Dedup misses, GC rewrites and backpressure explain why the engine feels busy.</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in backgroundSeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="backgroundSeries" :height="220" />
+        </div>
+      </div>
+    </div>
+
+    <div class="metric-summary-grid">
+      <div v-for="group in metricGroups" :key="group.title" class="content-card summary-card">
+        <div class="section-header">
+          <h3>{{ group.title }}</h3>
+          <i :class="group.icon"></i>
+        </div>
+        <div class="summary-chip-grid">
+          <div v-for="item in group.items" :key="item.label" class="summary-chip">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
           </div>
         </div>
       </div>
@@ -57,282 +251,217 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import http from '../api/http'
 import AppShell from '../components/AppShell.vue'
+import FlowPipeline from '../components/FlowPipeline.vue'
+import TrendChart from '../components/TrendChart.vue'
+import {
+  buildSeries,
+  formatBytes,
+  formatBytesPerSec,
+  formatNumber,
+  formatOpsPerSec,
+  formatPercent,
+  formatRatio,
+  formatWindowLabel,
+  seriesForKey,
+  telemetryWindows,
+} from '../lib/telemetry'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
+
+const AUTO_REFRESH_MS = 20000
+
+const telemetry = ref({ series: {}, rates: {}, latest: null })
 const raw = ref({})
-const previousSample = ref(null)
-const latestSample = ref(null)
+const selectedWindow = ref('24h')
 
-const POLL_INTERVAL_MS = 2000
-let pollHandle = null
+let refreshHandle = null
 
-const load = async () => {
-  const [metricsResp, overviewResp] = await Promise.allSettled([
-    http.get('/metrics/summary'),
-    http.get('/dashboard/overview'),
-  ])
+const latest = computed(() => telemetry.value.latest)
+const windowLabel = computed(() => formatWindowLabel(selectedWindow.value))
 
-  const metrics =
-    metricsResp.status === 'fulfilled' ? (metricsResp.value.data || {}) : {}
-  const overview =
-    overviewResp.status === 'fulfilled' ? (overviewResp.value.data || {}) : {}
+const writeThroughputSeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'client_write_bps', label: 'Client write', color: '#2563eb' },
+    { key: 'buffer_write_bps', label: 'Buffer write', color: '#0d9488' },
+    { key: 'lv3_write_bps', label: 'LV3 write', color: '#0891b2' },
+  ]),
+)
 
-  const next = {
-    ...metrics,
-    buffer_payload_bytes: overview.bufferPayloadBytes || 0,
-    buffer_payload_limit: overview.bufferPayloadLimit || 0,
-    buffer_pending_entries: overview.bufferPendingEntries || 0,
-    buffer_fill_percent: overview.bufferFillPercent || 0,
-  }
+const readThroughputSeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'client_read_bps', label: 'Client read', color: '#475569' },
+    { key: 'buffer_read_bps', label: 'Buffer read', color: '#3b82f6' },
+    { key: 'lv3_read_bps', label: 'LV3 read', color: '#f59e0b' },
+  ]),
+)
 
-  raw.value = next
-  if (latestSample.value) {
-    previousSample.value = latestSample.value
-  }
-  latestSample.value = {
-    capturedAtMs: Date.now(),
-    metrics: next,
-  }
-}
+const writeIopsSeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'client_write_iops', label: 'Client write IOPS', color: '#2563eb' },
+    { key: 'buffer_write_iops', label: 'Buffer write IOPS', color: '#0d9488' },
+    { key: 'lv3_write_iops', label: 'LV3 write IOPS', color: '#0891b2' },
+  ]),
+)
 
-function fmtBytes(b) {
-  if (b >= 1073741824) return (b / 1073741824).toFixed(2) + ' GiB'
-  if (b >= 1048576) return (b / 1048576).toFixed(1) + ' MiB'
-  if (b >= 1024) return (b / 1024).toFixed(0) + ' KiB'
-  return b + ' B'
-}
+const readIopsSeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'client_read_iops', label: 'Client read IOPS', color: '#475569' },
+    { key: 'buffer_read_iops', label: 'Buffer read IOPS', color: '#3b82f6' },
+    { key: 'lv3_read_iops', label: 'LV3 read IOPS', color: '#f59e0b' },
+  ]),
+)
 
-function fmtNs(ns) {
-  if (ns >= 1e9) return (ns / 1e9).toFixed(2) + ' s'
-  if (ns >= 1e6) return (ns / 1e6).toFixed(1) + ' ms'
-  if (ns >= 1e3) return (ns / 1e3).toFixed(0) + ' us'
-  return ns + ' ns'
-}
+const bufferFillSeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'buffer_fill_pct', label: 'Buffer fill', color: '#ef4444' },
+  ]),
+)
 
-function fmtAvgNs(totalNs, ops) {
-  if (!ops) return 'n/a'
-  return fmtNs(totalNs / ops)
-}
+const pendingEntriesSeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'buffer_pending_entries', label: 'Pending entries', color: '#2563eb' },
+  ]),
+)
 
-function fmtBytesPair(used, total) {
-  if (!total) return fmtBytes(used || 0)
-  return `${fmtBytes(used || 0)} / ${fmtBytes(total)}`
-}
+const payloadBytesSeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'buffer_payload_bytes', label: 'Payload bytes', color: '#0d9488' },
+  ]),
+)
 
-function fmtOpsPerSec(value) {
-  if (value == null) return 'n/a'
-  if (value >= 1000) return value.toFixed(0) + '/s'
-  if (value >= 100) return value.toFixed(1) + '/s'
-  return value.toFixed(2) + '/s'
-}
+const ratioSeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'compression_ratio', label: 'Compression', color: '#2563eb' },
+    { key: 'data_reduction_ratio', label: 'Data reduction', color: '#f59e0b' },
+  ]),
+)
 
-function fmtBytesPerSec(value) {
-  if (value == null) return 'n/a'
-  return fmtBytes(value) + '/s'
-}
+const dedupRateSeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'dedup_hit_rate_pct', label: 'Dedup hit rate', color: '#0d9488' },
+  ]),
+)
 
-const m = computed(() => raw.value)
+const backgroundSeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'dedup_hits_per_min', label: 'Dedup hits/min', color: '#0d9488' },
+    { key: 'dedup_misses_per_min', label: 'Dedup misses/min', color: '#3b82f6' },
+    { key: 'gc_rewrites_per_min', label: 'GC rewrites/min', color: '#f59e0b' },
+    { key: 'backpressure_events_per_min', label: 'Backpressure/min', color: '#ef4444' },
+  ]),
+)
 
-const compressRatio = computed(() => {
-  const d = m.value
-  if (!d.compress_output_bytes) return '1.00x'
-  return (d.compress_input_bytes / d.compress_output_bytes).toFixed(2) + 'x'
-})
-
-const dedupRate = computed(() => {
-  const d = m.value
-  const total = (d.dedup_hits || 0) + (d.dedup_misses || 0)
-  if (!total) return '0.0%'
-  return ((d.dedup_hits / total) * 100).toFixed(1) + '%'
-})
-
-const rateWindowSecs = computed(() => {
-  if (!previousSample.value || !latestSample.value) return 0
-  const deltaMs = latestSample.value.capturedAtMs - previousSample.value.capturedAtMs
-  if (deltaMs <= 0) return 0
-  return deltaMs / 1000
-})
-
-const rateWindowLabel = computed(() => {
-  if (!rateWindowSecs.value) return 'warming up'
-  return `${rateWindowSecs.value.toFixed(1)}s window`
-})
-
-function metricDelta(field) {
-  if (!previousSample.value || !latestSample.value || !rateWindowSecs.value) {
-    return null
-  }
-  const now = latestSample.value.metrics?.[field] || 0
-  const before = previousSample.value.metrics?.[field] || 0
-  return Math.max(0, now - before)
-}
-
-function buildRateCard(key, title, note, readOpsField, readBytesField, writeOpsField, writeBytesField) {
-  const secs = rateWindowSecs.value
-  if (!secs) {
-    return {
-      key,
-      title,
-      note,
-      readThroughput: 'n/a',
-      readIops: 'n/a',
-      writeThroughput: 'n/a',
-      writeIops: 'n/a',
-    }
-  }
-
-  const readOps = metricDelta(readOpsField) / secs
-  const readBytes = metricDelta(readBytesField) / secs
-  const writeOps = metricDelta(writeOpsField) / secs
-  const writeBytes = metricDelta(writeBytesField) / secs
-
-  return {
-    key,
-    title,
-    note,
-    readThroughput: fmtBytesPerSec(readBytes),
-    readIops: fmtOpsPerSec(readOps),
-    writeThroughput: fmtBytesPerSec(writeBytes),
-    writeIops: fmtOpsPerSec(writeOps),
-  }
-}
-
-const ioRateCards = computed(() => [
-  buildRateCard(
-    'client',
-    'Client IO',
-    'Front-end logical traffic seen by the volume API.',
-    'volume_read_ops',
-    'volume_read_bytes',
-    'volume_write_ops',
-    'volume_write_bytes',
-  ),
-  buildRateCard(
-    'cache',
-    'Cache IO',
-    'LV2 buffer activity: append writes and read hits served from cache.',
-    'buffer_read_ops',
-    'buffer_read_bytes',
-    'buffer_write_ops',
-    'buffer_write_bytes',
-  ),
-  buildRateCard(
-    'lv3',
-    'LV3 IO',
-    'Physical device traffic issued by IoEngine, including background work.',
-    'lv3_read_ops',
-    'lv3_read_bytes',
-    'lv3_write_ops',
-    'lv3_write_bytes',
-  ),
+const laneCards = computed(() => [
+  {
+    key: 'client',
+    kicker: 'Logical traffic',
+    title: 'Client IO',
+    note: 'What the host actually asked the engine to do.',
+    icon: 'bi bi-arrow-down-up',
+    color: '#2563eb',
+    glow: 'linear-gradient(135deg, rgba(46, 111, 206, 0.18), rgba(46, 111, 206, 0.06))',
+    read: `${formatBytesPerSec(telemetry.value.rates?.clientReadBps)} · ${formatOpsPerSec(telemetry.value.rates?.clientReadIops)}`,
+    write: `${formatBytesPerSec(telemetry.value.rates?.clientWriteBps)} · ${formatOpsPerSec(telemetry.value.rates?.clientWriteIops)}`,
+    series: [
+      { key: 'client-read', color: '#475569', points: seriesForKey(telemetry.value, 'client_read_bps') },
+      { key: 'client-write', color: '#2563eb', points: seriesForKey(telemetry.value, 'client_write_bps') },
+    ],
+  },
+  {
+    key: 'buffer',
+    kicker: 'Hot path',
+    title: 'Buffer IO',
+    note: 'Append throughput and read hits served before LV3 gets involved.',
+    icon: 'bi bi-layers',
+    color: '#0d9488',
+    glow: 'linear-gradient(135deg, rgba(30, 167, 161, 0.18), rgba(30, 167, 161, 0.06))',
+    read: `${formatBytesPerSec(telemetry.value.rates?.bufferReadBps)} · ${formatOpsPerSec(telemetry.value.rates?.bufferReadIops)}`,
+    write: `${formatBytesPerSec(telemetry.value.rates?.bufferWriteBps)} · ${formatOpsPerSec(telemetry.value.rates?.bufferWriteIops)}`,
+    series: [
+      { key: 'buffer-read', color: '#3b82f6', points: seriesForKey(telemetry.value, 'buffer_read_bps') },
+      { key: 'buffer-write', color: '#0d9488', points: seriesForKey(telemetry.value, 'buffer_write_bps') },
+    ],
+  },
+  {
+    key: 'lv3',
+    kicker: 'Durable IO',
+    title: 'LV3',
+    note: 'Physical reads and writes after packing, dedup and background work.',
+    icon: 'bi bi-hdd-network',
+    color: '#0891b2',
+    glow: 'linear-gradient(135deg, rgba(20, 126, 141, 0.18), rgba(20, 126, 141, 0.06))',
+    read: `${formatBytesPerSec(telemetry.value.rates?.lv3ReadBps)} · ${formatOpsPerSec(telemetry.value.rates?.lv3ReadIops)}`,
+    write: `${formatBytesPerSec(telemetry.value.rates?.lv3WriteBps)} · ${formatOpsPerSec(telemetry.value.rates?.lv3WriteIops)}`,
+    series: [
+      { key: 'lv3-read', color: '#f59e0b', points: seriesForKey(telemetry.value, 'lv3_read_bps') },
+      { key: 'lv3-write', color: '#0891b2', points: seriesForKey(telemetry.value, 'lv3_write_bps') },
+    ],
+  },
 ])
 
 const metricGroups = computed(() => {
-  const d = m.value
-  if (!d.uptime_secs && d.uptime_secs !== 0) return []
+  const metrics = raw.value || {}
   return [
     {
-      title: 'Volume IO',
+      title: 'Volume edge',
+      icon: 'bi bi-hdd-stack',
       items: [
-        { key: 'uptime', label: 'uptime', value: d.uptime_secs + 's' },
-        { key: 'read_ops', label: 'read ops', value: d.volume_read_ops },
-        { key: 'write_ops', label: 'write ops', value: d.volume_write_ops },
-        { key: 'read_bytes', label: 'read bytes', value: fmtBytes(d.volume_read_bytes) },
-        { key: 'write_bytes', label: 'write bytes', value: fmtBytes(d.volume_write_bytes) },
-        { key: 'create', label: 'volume creates', value: d.volume_create_ops },
-        { key: 'delete', label: 'volume deletes', value: d.volume_delete_ops },
+        { label: 'Uptime', value: `${formatNumber(metrics.uptime_secs || 0)}s` },
+        { label: 'Volumes', value: latest.value?.volumeCount ?? 0 },
+        { label: 'Volume reads', value: formatNumber(metrics.volume_read_ops || 0) },
+        { label: 'Volume writes', value: formatNumber(metrics.volume_write_ops || 0) },
       ],
     },
     {
-      title: 'Buffer',
+      title: 'Buffer layer',
+      icon: 'bi bi-layers',
       items: [
-        { key: 'appends', label: 'appends', value: d.buffer_appends },
-        { key: 'append_bytes', label: 'append bytes', value: fmtBytes(d.buffer_append_bytes) },
-        { key: 'write_ops', label: 'cache write ops', value: d.buffer_write_ops || 0 },
-        { key: 'write_bytes', label: 'cache write bytes', value: fmtBytes(d.buffer_write_bytes || 0) },
-        { key: 'read_ops', label: 'cache read ops', value: d.buffer_read_ops || 0 },
-        { key: 'read_bytes', label: 'cache read bytes', value: fmtBytes(d.buffer_read_bytes || 0) },
-        { key: 'payload_mem', label: 'payload memory', value: fmtBytesPair(d.buffer_payload_bytes, d.buffer_payload_limit) },
-        { key: 'buffer_fill', label: 'buffer fill', value: `${d.buffer_fill_percent || 0}%` },
-        { key: 'pending_entries', label: 'pending entries', value: d.buffer_pending_entries || 0 },
-        { key: 'backpressure_events', label: 'backpressure events', value: d.buffer_backpressure_events || 0 },
-        { key: 'backpressure_wait_total', label: 'backpressure wait total', value: fmtNs(d.buffer_backpressure_wait_ns || 0) },
-        { key: 'backpressure_wait_avg', label: 'backpressure wait avg', value: fmtAvgNs(d.buffer_backpressure_wait_ns, d.buffer_backpressure_events) },
-        { key: 'hydration_skips', label: 'hydration skips', value: d.buffer_hydration_skipped_due_to_mem_limit || 0 },
-        { key: 'hydration_bypass', label: 'head bypass count', value: d.buffer_hydration_head_bypass_count || 0 },
-        { key: 'lookup_hits', label: 'lookup hits', value: d.buffer_lookup_hits },
-        { key: 'lookup_misses', label: 'lookup misses', value: d.buffer_lookup_misses },
-        { key: 'read_buf_hits', label: 'read buffer hits', value: d.read_buffer_hits },
-        { key: 'read_unmapped', label: 'read unmapped', value: d.read_unmapped },
-        { key: 'crc_errors', label: 'CRC errors', value: d.read_crc_errors },
+        { label: 'Appends', value: formatNumber(metrics.buffer_appends || 0) },
+        { label: 'Pending', value: formatNumber(latest.value?.bufferPendingEntries || 0) },
+        { label: 'Payload', value: formatBytes(latest.value?.bufferPayloadBytes || 0) },
+        { label: 'Backpressure', value: formatNumber(metrics.buffer_backpressure_events || 0) },
       ],
     },
     {
-      title: 'LV3 IO',
+      title: 'Optimization',
+      icon: 'bi bi-stars',
       items: [
-        { key: 'lv3_read_ops', label: 'lv3 read ops', value: d.lv3_read_ops || 0 },
-        { key: 'lv3_read_bytes', label: 'lv3 read bytes', value: fmtBytes(d.lv3_read_bytes || 0) },
-        { key: 'lv3_write_ops', label: 'lv3 write ops', value: d.lv3_write_ops || 0 },
-        { key: 'lv3_write_bytes', label: 'lv3 write bytes', value: fmtBytes(d.lv3_write_bytes || 0) },
-        { key: 'read_lv3_hits', label: 'logical LV3 hits', value: d.read_lv3_hits || 0 },
+        { label: 'Compression', value: formatRatio(latest.value?.compressionRatio) },
+        { label: 'Dedup rate', value: formatPercent(latest.value?.dedupHitRatePct || 0) },
+        { label: 'Dedup hits', value: formatNumber(metrics.dedup_hits || 0) },
+        { label: 'Dedup misses', value: formatNumber(metrics.dedup_misses || 0) },
       ],
     },
     {
-      title: 'Flush + Compress',
+      title: 'Background work',
+      icon: 'bi bi-gear-wide-connected',
       items: [
-        { key: 'compress_ratio', label: 'compression ratio', value: compressRatio.value },
-        { key: 'coalesce', label: 'coalesce runs', value: d.coalesce_runs },
-        { key: 'coalesced_u', label: 'coalesced units', value: d.coalesced_units },
-        { key: 'coalesced_b', label: 'coalesced bytes', value: fmtBytes(d.coalesced_bytes) },
-        { key: 'compress_u', label: 'compress units', value: d.compress_units },
-        { key: 'compress_in', label: 'compress in', value: fmtBytes(d.compress_input_bytes) },
-        { key: 'compress_out', label: 'compress out', value: fmtBytes(d.compress_output_bytes) },
-        { key: 'flush_units', label: 'flush units written', value: d.flush_units_written },
-        { key: 'flush_bytes', label: 'flush bytes', value: fmtBytes(d.flush_unit_bytes) },
-        { key: 'packed_slots', label: 'packed slots', value: d.flush_packed_slots_written },
-        { key: 'packed_bytes', label: 'packed bytes', value: fmtBytes(d.flush_packed_bytes) },
-        { key: 'precheck_ops', label: 'live-pba prechecks', value: d.flush_writer_precheck_live_pba_ops || 0 },
-        { key: 'precheck_failures', label: 'precheck failures', value: d.flush_writer_precheck_live_pba_failures || 0 },
-        { key: 'precheck_avg', label: 'precheck avg latency', value: fmtAvgNs(d.flush_writer_precheck_live_pba_ns, d.flush_writer_precheck_live_pba_ops) },
-        { key: 'flush_errors', label: 'flush errors', value: d.flush_errors },
-      ],
-    },
-    {
-      title: 'Dedup',
-      items: [
-        { key: 'dedup_rate', label: 'dedup hit rate', value: dedupRate.value },
-        { key: 'hits', label: 'dedup hits', value: d.dedup_hits },
-        { key: 'misses', label: 'dedup misses', value: d.dedup_misses },
-        { key: 'hit_failures', label: 'dedup hit failures', value: d.dedup_hit_failures || 0 },
-        { key: 'saved', label: 'space saved by dedup', value: fmtBytes(d.dedup_hits * 4096) },
-        { key: 'skipped', label: 'skipped units', value: d.dedup_skipped_units },
-        { key: 'lookup_ops', label: 'lookup ops', value: d.dedup_lookup_ops || 0 },
-        { key: 'lookup_avg', label: 'lookup avg latency', value: fmtAvgNs(d.dedup_lookup_ns, d.dedup_lookup_ops) },
-        { key: 'live_check_ops', label: 'live checks', value: d.dedup_live_check_ops || 0 },
-        { key: 'live_check_avg', label: 'live check avg latency', value: fmtAvgNs(d.dedup_live_check_ns, d.dedup_live_check_ops) },
-        { key: 'stale_entries', label: 'stale index entries', value: d.dedup_stale_index_entries || 0 },
-        { key: 'stale_delete_total', label: 'stale delete total', value: fmtNs(d.dedup_stale_delete_ns || 0) },
-        { key: 'stale_delete_avg', label: 'stale delete avg latency', value: fmtAvgNs(d.dedup_stale_delete_ns, d.dedup_stale_index_entries) },
-        { key: 'hit_commit_ops', label: 'hit commits', value: d.dedup_hit_commit_ops || 0 },
-        { key: 'hit_commit_avg', label: 'hit commit avg latency', value: fmtAvgNs(d.dedup_hit_commit_ns, d.dedup_hit_commit_ops) },
-        { key: 'rescan_cycles', label: 'rescan cycles', value: d.dedup_rescan_cycles },
-        { key: 'rescan_hits', label: 'rescan hits', value: d.dedup_rescan_hits },
-        { key: 'rescan_errors', label: 'rescan errors', value: d.dedup_rescan_errors },
-      ],
-    },
-    {
-      title: 'GC',
-      items: [
-        { key: 'gc_cycles', label: 'scan cycles', value: d.gc_cycles },
-        { key: 'gc_found', label: 'candidates found', value: d.gc_candidates_found },
-        { key: 'gc_rewritten', label: 'blocks rewritten', value: d.gc_blocks_rewritten },
-        { key: 'gc_errors', label: 'errors', value: d.gc_errors },
+        { label: 'GC rewrites', value: formatNumber(metrics.gc_blocks_rewritten || 0) },
+        { label: 'GC cycles', value: formatNumber(metrics.gc_cycles || 0) },
+        { label: 'Flush errors', value: formatNumber(metrics.flush_errors || 0) },
+        { label: 'CRC errors', value: formatNumber(metrics.read_crc_errors || 0) },
       ],
     },
   ]
 })
+
+const load = async () => {
+  const [telemetryResp, metricsResp] = await Promise.all([
+    http.get(`/metrics/timeseries?window=${selectedWindow.value}`),
+    http.get('/metrics/summary'),
+  ])
+
+  telemetry.value = telemetryResp.data || { series: {}, rates: {}, latest: null }
+  raw.value = metricsResp.data || {}
+}
+
+const selectWindow = async (nextWindow) => {
+  if (selectedWindow.value === nextWindow) return
+  selectedWindow.value = nextWindow
+  await load()
+}
 
 const logout = () => {
   auth.logout()
@@ -342,53 +471,157 @@ const logout = () => {
 onMounted(async () => {
   await auth.fetchMe()
   await load()
-  pollHandle = window.setInterval(load, POLL_INTERVAL_MS)
+  refreshHandle = window.setInterval(load, AUTO_REFRESH_MS)
 })
 
 onBeforeUnmount(() => {
-  if (pollHandle) {
-    window.clearInterval(pollHandle)
+  if (refreshHandle) {
+    window.clearInterval(refreshHandle)
   }
 })
 </script>
 
 <style scoped>
-.lane-note {
-  margin: 0 0 1rem;
-  color: var(--onyx-muted);
-  font-size: 0.92rem;
+.window-switch {
+  display: inline-flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
 }
 
-.rate-grid {
+.lane-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.lane-card,
+.chart-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.lane-head,
+.lane-stats,
+.chart-legend {
+  display: flex;
+}
+
+.lane-head {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.lane-head h3 {
+  margin: 0.125rem 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.lane-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--onyx-radius-xs);
+  border: 1px solid var(--onyx-border);
+  background: var(--onyx-surface-soft);
+  font-size: 1rem;
+}
+
+.lane-stats {
+  gap: 0.5rem;
+}
+
+.lane-stats > div {
+  flex: 1 1 0;
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--onyx-radius-sm);
+  border: 1px solid var(--onyx-border);
+  background: var(--onyx-surface-soft);
+  font-size: 0.8125rem;
+}
+
+.lane-stats span,
+.chart-note {
+  color: var(--onyx-muted);
+}
+
+.chart-note {
+  margin: 0.125rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.chart-legend {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: var(--onyx-muted);
+  font-size: 0.8125rem;
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.legend-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.metric-summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
+  gap: 0.75rem;
 }
 
-.rate-item {
+.summary-card i {
+  color: var(--onyx-primary);
+  font-size: 1rem;
+}
+
+.summary-chip-grid {
   display: grid;
-  gap: 0.25rem;
-  padding: 0.9rem 1rem;
-  border-radius: 1rem;
-  background: #f4f9fc;
-  border: 1px solid rgba(46, 111, 206, 0.08);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
-.rate-item span {
-  color: #55738f;
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.summary-chip {
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--onyx-radius-sm);
+  border: 1px solid var(--onyx-border);
+  background: var(--onyx-surface-soft);
 }
 
-.rate-item strong {
-  color: var(--onyx-text);
-  font-size: 1.05rem;
+.summary-chip span {
+  color: var(--onyx-muted);
+  font-size: 0.75rem;
 }
 
-@media (max-width: 640px) {
-  .rate-grid {
+.summary-chip strong {
+  font-size: 0.9375rem;
+}
+
+@media (max-width: 1100px) {
+  .lane-grid,
+  .metric-summary-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .summary-chip-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lane-stats {
+    flex-direction: column;
   }
 }
 </style>

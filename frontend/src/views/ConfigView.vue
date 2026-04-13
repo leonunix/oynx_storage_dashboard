@@ -359,47 +359,48 @@ onMounted(loadConfig)
 .config-sections {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .config-group {
   border: 1px solid var(--onyx-border);
-  border-radius: 8px;
+  border-radius: var(--onyx-radius-sm);
   overflow: hidden;
 }
 
 .config-group summary {
-  padding: 0.6rem 1rem;
+  padding: 0.625rem 0.875rem;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   cursor: pointer;
-  background: rgba(18, 90, 138, 0.04);
+  background: var(--onyx-surface-soft);
   user-select: none;
+  transition: background 0.15s;
 }
 
 .config-group summary:hover {
-  background: rgba(18, 90, 138, 0.08);
+  background: var(--onyx-border-light);
 }
 
 .config-fields {
   display: grid;
   grid-template-columns: 180px 1fr;
-  gap: 0.5rem 1rem;
-  padding: 0.75rem 1rem;
+  gap: 0.5rem 0.75rem;
+  padding: 0.75rem;
   align-items: center;
 }
 
 .config-fields label {
-  font-size: 0.82rem;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8125rem;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
   color: var(--onyx-muted);
   white-space: nowrap;
 }
 
 .config-fields .form-control,
 .config-fields .form-select {
-  font-size: 0.85rem;
-  padding: 0.35rem 0.6rem;
+  font-size: 0.8125rem;
+  padding: 0.3rem 0.5rem;
 }
 
 .mode-display {
@@ -409,34 +410,23 @@ onMounted(loadConfig)
 .mode-steps {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .mode-step {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.4rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  padding: 0.4rem 0.625rem;
+  border-radius: var(--onyx-radius-xs);
+  font-size: 0.8125rem;
   color: var(--onyx-muted);
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--onyx-surface-soft);
 }
 
 .mode-step.active {
   color: var(--onyx-accent);
-  background: rgba(30, 167, 161, 0.08);
+  background: rgba(13, 148, 136, 0.08);
   font-weight: 600;
-}
-
-.btn-accent {
-  background: var(--onyx-accent);
-  color: #fff;
-  border: none;
-}
-
-.btn-accent:hover {
-  background: #17908b;
-  color: #fff;
 }
 </style>

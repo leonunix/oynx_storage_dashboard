@@ -697,36 +697,47 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.nav-tabs {
+  border-bottom: 1px solid var(--onyx-border);
+}
+
 .nav-tabs .nav-link {
   color: var(--onyx-muted);
   border: none;
   border-bottom: 2px solid transparent;
   background: none;
-  padding: 0.6rem 1.2rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: color 0.15s, border-color 0.15s;
 }
+
 .nav-tabs .nav-link:hover {
   color: var(--onyx-text);
   border-bottom-color: var(--onyx-border);
 }
+
 .nav-tabs .nav-link.active {
-  color: var(--onyx-accent);
-  border-bottom-color: var(--onyx-accent);
+  color: var(--onyx-primary);
+  border-bottom-color: var(--onyx-primary);
   background: none;
 }
+
 .config-group {
   border: 1px solid var(--onyx-border);
-  border-radius: 0.75rem;
+  border-radius: var(--onyx-radius-sm);
   overflow: hidden;
 }
+
 .config-group summary {
-  padding: 0.75rem 1rem;
+  padding: 0.625rem 0.875rem;
   font-weight: 600;
+  font-size: 0.875rem;
   cursor: pointer;
   background: var(--onyx-surface-soft);
 }
+
 .config-body {
-  padding: 1rem;
+  padding: 0.875rem;
 }
 </style>

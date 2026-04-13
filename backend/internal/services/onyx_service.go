@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/leonunix/onyx_storage/dashboard/backend/internal/config"
 	"github.com/leonunix/onyx_storage/dashboard/backend/internal/domain"
@@ -188,6 +189,20 @@ func (s *OnyxService) MetricsJSON() (*domain.MetricsJSON, error) {
 		return nil, fmt.Errorf("parse metrics-json: %w", err)
 	}
 	return &m, nil
+}
+
+func (s *OnyxService) SampleTelemetry(ctx context.Context) (*telemetrySample, error) {
+	metrics, err := s.MetricsJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	overview, err := s.Overview(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return newTelemetrySample(time.Now().UTC(), overview, *metrics), nil
 }
 
 func (s *OnyxService) ListVolumes(ctx context.Context) ([]domain.Volume, error) {

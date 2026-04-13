@@ -37,11 +37,17 @@ func NewServer(cfg config.Config) (*http.Server, error) {
 		return nil, fmt.Errorf("initialize user store: %w", err)
 	}
 	jwtManager := auth.NewJWTManager(cfg.Auth.JWTSecret, cfg.Auth.TokenTTL)
+	onyxService := services.NewOnyxService(cfg.Onyx, runner)
+	metricsHistory, err := services.NewMetricsHistoryService(cfg.Metrics, onyxService)
+	if err != nil {
+		return nil, fmt.Errorf("initialize metrics history service: %w", err)
+	}
 
 	handlers := &api.Handlers{
 		UserStore:      userStore,
 		JWTManager:     jwtManager,
-		OnyxService:    services.NewOnyxService(cfg.Onyx, runner),
+		OnyxService:    onyxService,
+		MetricsHistory: metricsHistory,
 		StorageService: services.NewStorageService(cfg.Operations, runner, cfg.Command.StorageOpTimeout),
 		ConfigService:  services.NewConfigService(cfg.Onyx.ConfigPath, cfg.Onyx.SocketPath, runner),
 		AuditService:   auditService,
@@ -65,8 +71,14 @@ func NewServer(cfg config.Config) (*http.Server, error) {
 		FrontendFS:     frontendFS,
 	})
 
-	return &http.Server{
+	server := &http.Server{
 		Addr:    cfg.Server.Address,
 		Handler: router,
-	}, nil
+	}
+	server.RegisterOnShutdown(func() {
+		_ = metricsHistory.Stop()
+	})
+	metricsHistory.Start()
+
+	return server, nil
 }

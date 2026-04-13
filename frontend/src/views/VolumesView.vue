@@ -143,16 +143,18 @@ onMounted(async () => {
 
 .io-tag {
   display: inline-block;
-  font-size: 0.72rem;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  background: rgba(18, 90, 138, 0.08);
-  color: var(--onyx-text);
+  font-size: 0.6875rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--onyx-radius-xs);
+  background: var(--onyx-surface-soft);
+  border: 1px solid var(--onyx-border);
+  color: var(--onyx-text-secondary);
   white-space: nowrap;
 }
 
 .io-err {
-  background: rgba(220, 53, 69, 0.12);
-  color: #dc3545;
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: var(--onyx-danger);
 }
 </style>

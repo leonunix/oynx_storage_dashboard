@@ -384,18 +384,18 @@ type EngineStatusJSON struct {
 }
 
 type BufferShardJSON struct {
-	ShardIdx       int     `json:"shard_idx"`
-	UsedBytes      uint64  `json:"used_bytes"`
-	CapacityBytes  uint64  `json:"capacity_bytes"`
-	FillPct        int     `json:"fill_pct"`
-	PendingEntries uint64  `json:"pending_entries"`
-	HeadOffset     uint64  `json:"head_offset"`
-	TailOffset     uint64  `json:"tail_offset"`
-	LogOrderLen    int     `json:"log_order_len"`
-	FlushedSeqsLen int     `json:"flushed_seqs_len"`
-	HeadSeq        *uint64 `json:"head_seq"`
-	HeadRemaining  *uint32 `json:"head_remaining_lbas"`
-	HeadAgeMs      *uint64 `json:"head_age_ms"`
+	ShardIdx        int     `json:"shard_idx"`
+	UsedBytes       uint64  `json:"used_bytes"`
+	CapacityBytes   uint64  `json:"capacity_bytes"`
+	FillPct         int     `json:"fill_pct"`
+	PendingEntries  uint64  `json:"pending_entries"`
+	HeadOffset      uint64  `json:"head_offset"`
+	TailOffset      uint64  `json:"tail_offset"`
+	LogOrderLen     int     `json:"log_order_len"`
+	FlushedSeqsLen  int     `json:"flushed_seqs_len"`
+	HeadSeq         *uint64 `json:"head_seq"`
+	HeadRemaining   *uint32 `json:"head_remaining_lbas"`
+	HeadAgeMs       *uint64 `json:"head_age_ms"`
 	HeadResidencyMs *uint64 `json:"head_residency_ms"`
 }
 
@@ -462,6 +462,57 @@ type MetricsJSON struct {
 	DedupRescanCycles                   uint64 `json:"dedup_rescan_cycles"`
 	DedupRescanHits                     uint64 `json:"dedup_rescan_hits"`
 	DedupRescanErrors                   uint64 `json:"dedup_rescan_errors"`
+}
+
+type TelemetryPoint struct {
+	Timestamp int64   `json:"timestamp"`
+	Value     float64 `json:"value"`
+}
+
+type TelemetryRates struct {
+	WindowSeconds   float64 `json:"windowSeconds"`
+	ClientReadBps   float64 `json:"clientReadBps"`
+	ClientWriteBps  float64 `json:"clientWriteBps"`
+	ClientReadIops  float64 `json:"clientReadIops"`
+	ClientWriteIops float64 `json:"clientWriteIops"`
+	BufferReadBps   float64 `json:"bufferReadBps"`
+	BufferWriteBps  float64 `json:"bufferWriteBps"`
+	BufferReadIops  float64 `json:"bufferReadIops"`
+	BufferWriteIops float64 `json:"bufferWriteIops"`
+	Lv3ReadBps      float64 `json:"lv3ReadBps"`
+	Lv3WriteBps     float64 `json:"lv3WriteBps"`
+	Lv3ReadIops     float64 `json:"lv3ReadIops"`
+	Lv3WriteIops    float64 `json:"lv3WriteIops"`
+}
+
+type TelemetrySnapshot struct {
+	CapturedAt               time.Time `json:"capturedAt"`
+	EngineMode               string    `json:"engineMode"`
+	VolumeCount              int       `json:"volumeCount"`
+	LiveHandleCount          int       `json:"liveHandleCount"`
+	ZoneCount                int       `json:"zoneCount"`
+	BufferFillPercent        int       `json:"bufferFillPercent"`
+	BufferPendingEntries     uint64    `json:"bufferPendingEntries"`
+	BufferPayloadBytes       uint64    `json:"bufferPayloadBytes"`
+	BufferPayloadLimit       uint64    `json:"bufferPayloadLimit"`
+	BufferPayloadUtilPercent float64   `json:"bufferPayloadUtilPercent"`
+	AllocatorFreeBlocks      uint64    `json:"allocatorFreeBlocks"`
+	AllocatorTotalBlocks     uint64    `json:"allocatorTotalBlocks"`
+	AllocatorUsagePercent    float64   `json:"allocatorUsagePercent"`
+	CompressionRatio         float64   `json:"compressionRatio"`
+	DedupHitRatePct          float64   `json:"dedupHitRatePct"`
+	DataReductionRatio       float64   `json:"dataReductionRatio"`
+}
+
+type TelemetryResponse struct {
+	GeneratedAt      time.Time                   `json:"generatedAt"`
+	WindowSeconds    int64                       `json:"windowSeconds"`
+	StepSeconds      int64                       `json:"stepSeconds"`
+	RetentionDays    int                         `json:"retentionDays"`
+	AvailableWindows []string                    `json:"availableWindows"`
+	Latest           *TelemetrySnapshot          `json:"latest,omitempty"`
+	Rates            TelemetryRates              `json:"rates"`
+	Series           map[string][]TelemetryPoint `json:"series"`
 }
 
 // VolumeJSON matches the enriched volumes-json IPC response.

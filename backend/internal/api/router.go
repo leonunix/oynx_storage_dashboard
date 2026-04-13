@@ -49,7 +49,9 @@ func NewRouter(deps RouterDependencies) http.Handler {
 			protected.Get("/auth/me", deps.Handlers.Me)
 
 			protected.With(appmw.RequirePermission("overview:read")).Get("/dashboard/overview", deps.Handlers.Overview)
+			protected.With(appmw.RequirePermission("overview:read")).Get("/dashboard/telemetry", deps.Handlers.Telemetry)
 			protected.With(appmw.RequirePermission("metrics:read")).Get("/metrics/summary", deps.Handlers.MetricsSummary)
+			protected.With(appmw.RequirePermission("metrics:read")).Get("/metrics/timeseries", deps.Handlers.Telemetry)
 			protected.With(appmw.RequirePermission("volumes:read")).Get("/volumes", deps.Handlers.ListVolumes)
 			protected.With(appmw.RequirePermission("volumes:write")).Post("/volumes", deps.Handlers.CreateVolume)
 			protected.With(appmw.RequirePermission("volumes:write")).Delete("/volumes/{name}", deps.Handlers.DeleteVolume)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -18,6 +19,7 @@ type Handlers struct {
 	UserStore      auth.UserStore
 	JWTManager     *auth.JWTManager
 	OnyxService    *services.OnyxService
+	MetricsHistory *services.MetricsHistoryService
 	StorageService *services.StorageService
 	ConfigService  *services.ConfigService
 	AuditService   *services.AuditService
@@ -113,6 +115,16 @@ func (h *Handlers) MetricsSummary(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, metrics)
 }
 
+func (h *Handlers) Telemetry(w http.ResponseWriter, r *http.Request) {
+	window := parseTelemetryWindow(r.URL.Query().Get("window"))
+	telemetry, err := h.MetricsHistory.Telemetry(r.Context(), window)
+	if err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, telemetry)
+}
+
 func (h *Handlers) ListVolumes(w http.ResponseWriter, r *http.Request) {
 	volumes, err := h.OnyxService.ListVolumes(r.Context())
 	if err != nil {
@@ -120,6 +132,23 @@ func (h *Handlers) ListVolumes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"items": volumes})
+}
+
+func parseTelemetryWindow(raw string) time.Duration {
+	switch strings.TrimSpace(strings.ToLower(raw)) {
+	case "1h":
+		return time.Hour
+	case "6h":
+		return 6 * time.Hour
+	case "24h", "1d":
+		return 24 * time.Hour
+	case "7d":
+		return 7 * 24 * time.Hour
+	case "14d":
+		return 14 * 24 * time.Hour
+	default:
+		return 24 * time.Hour
+	}
 }
 
 func (h *Handlers) CreateVolume(w http.ResponseWriter, r *http.Request) {
