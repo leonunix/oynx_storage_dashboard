@@ -111,6 +111,12 @@ func (s *OnyxService) overviewJSON() (domain.Overview, error) {
 		if s.BufferPendingEntries != nil {
 			ov.BufferPendingEntries = *s.BufferPendingEntries
 		}
+		if s.BufferPayloadBytes != nil {
+			ov.BufferPayloadBytes = *s.BufferPayloadBytes
+		}
+		if s.BufferPayloadLimit != nil {
+			ov.BufferPayloadLimit = *s.BufferPayloadLimit
+		}
 		if s.AllocatorFreeBlocks != nil {
 			ov.AllocatorFreeBlocks = *s.AllocatorFreeBlocks
 		}
@@ -123,10 +129,24 @@ func (s *OnyxService) overviewJSON() (domain.Overview, error) {
 		ov.Metrics["volume_write_ops"] = s.Metrics.VolumeWriteOps
 		ov.Metrics["volume_read_bytes"] = s.Metrics.VolumeReadBytes
 		ov.Metrics["volume_write_bytes"] = s.Metrics.VolumeWriteBytes
+		ov.Metrics["buffer_write_ops"] = s.Metrics.BufferWriteOps
+		ov.Metrics["buffer_write_bytes"] = s.Metrics.BufferWriteBytes
+		ov.Metrics["buffer_read_ops"] = s.Metrics.BufferReadOps
+		ov.Metrics["buffer_read_bytes"] = s.Metrics.BufferReadBytes
+		ov.Metrics["lv3_read_ops"] = s.Metrics.Lv3ReadOps
+		ov.Metrics["lv3_read_bytes"] = s.Metrics.Lv3ReadBytes
+		ov.Metrics["lv3_write_ops"] = s.Metrics.Lv3WriteOps
+		ov.Metrics["lv3_write_bytes"] = s.Metrics.Lv3WriteBytes
 		ov.Metrics["compress_input_bytes"] = s.Metrics.CompressInputBytes
 		ov.Metrics["compress_output_bytes"] = s.Metrics.CompressOutputBytes
+		ov.Metrics["buffer_payload_bytes"] = ov.BufferPayloadBytes
+		ov.Metrics["buffer_payload_limit"] = ov.BufferPayloadLimit
+		ov.Metrics["buffer_backpressure_events"] = s.Metrics.BufferBackpressureEvents
+		ov.Metrics["buffer_hydration_skips"] = s.Metrics.BufferHydrationSkippedDueToMemLimit
 		ov.Metrics["dedup_hits"] = s.Metrics.DedupHits
 		ov.Metrics["dedup_misses"] = s.Metrics.DedupMisses
+		ov.Metrics["writer_precheck_live_pba_ops"] = s.Metrics.FlushWriterPrecheckLivePbaOps
+		ov.Metrics["writer_precheck_live_pba_failures"] = s.Metrics.FlushWriterPrecheckLivePbaFailures
 		ov.Metrics["gc_cycles"] = s.Metrics.GcCycles
 		ov.Metrics["gc_blocks_rewritten"] = s.Metrics.GcBlocksRewritten
 		ov.Metrics["flush_errors"] = s.Metrics.FlushErrors

@@ -78,21 +78,21 @@ type AuditEvent struct {
 }
 
 type Volume struct {
-	Name        string               `json:"name"`
-	SizeBytes   uint64               `json:"sizeBytes"`
-	ZoneCount   uint32               `json:"zoneCount"`
-	Compression string               `json:"compression"`
-	Status      string               `json:"status"`
-	CreatedAt   uint64               `json:"createdAt,omitempty"`
-	Metrics     *VolumeIOMetrics     `json:"metrics,omitempty"`
+	Name        string           `json:"name"`
+	SizeBytes   uint64           `json:"sizeBytes"`
+	ZoneCount   uint32           `json:"zoneCount"`
+	Compression string           `json:"compression"`
+	Status      string           `json:"status"`
+	CreatedAt   uint64           `json:"createdAt,omitempty"`
+	Metrics     *VolumeIOMetrics `json:"metrics,omitempty"`
 }
 
 type VolumeIOMetrics struct {
-	ReadOps    uint64 `json:"readOps"`
-	ReadBytes  uint64 `json:"readBytes"`
-	WriteOps   uint64 `json:"writeOps"`
-	WriteBytes uint64 `json:"writeBytes"`
-	ReadErrors uint64 `json:"readErrors"`
+	ReadOps     uint64 `json:"readOps"`
+	ReadBytes   uint64 `json:"readBytes"`
+	WriteOps    uint64 `json:"writeOps"`
+	WriteBytes  uint64 `json:"writeBytes"`
+	ReadErrors  uint64 `json:"readErrors"`
 	WriteErrors uint64 `json:"writeErrors"`
 }
 
@@ -128,7 +128,7 @@ type StorageLayout struct {
 	DMTargets       []DMTarget       `json:"dmTargets"`
 	LogicalVolumes  []LvmVolume      `json:"logicalVolumes"`
 	RaidArrays      []RaidArray      `json:"raidArrays"`
-	PhysicalVolumes []PhysicalVolume  `json:"physicalVolumes"`
+	PhysicalVolumes []PhysicalVolume `json:"physicalVolumes"`
 	VolumeGroups    []VolumeGroup    `json:"volumeGroups"`
 	AllowMutations  bool             `json:"allowMutations"`
 	Warnings        []string         `json:"warnings"`
@@ -303,9 +303,9 @@ type UblkSection struct {
 }
 
 type FlushSection struct {
-	CompressWorkers      *int `json:"compress_workers,omitempty" toml:"compress_workers,omitempty"`
-	CoalesceMaxRawBytes  *int `json:"coalesce_max_raw_bytes,omitempty" toml:"coalesce_max_raw_bytes,omitempty"`
-	CoalesceMaxLbas      *int `json:"coalesce_max_lbas,omitempty" toml:"coalesce_max_lbas,omitempty"`
+	CompressWorkers     *int `json:"compress_workers,omitempty" toml:"compress_workers,omitempty"`
+	CoalesceMaxRawBytes *int `json:"coalesce_max_raw_bytes,omitempty" toml:"coalesce_max_raw_bytes,omitempty"`
+	CoalesceMaxLbas     *int `json:"coalesce_max_lbas,omitempty" toml:"coalesce_max_lbas,omitempty"`
 }
 
 type EngineSection struct {
@@ -323,11 +323,11 @@ type GcSection struct {
 }
 
 type DedupSection struct {
-	Enabled                  *bool `json:"enabled,omitempty" toml:"enabled,omitempty"`
-	Workers                  *int  `json:"workers,omitempty" toml:"workers,omitempty"`
-	BufferSkipThresholdPct   *int  `json:"buffer_skip_threshold_pct,omitempty" toml:"buffer_skip_threshold_pct,omitempty"`
-	RescanIntervalMs         *int  `json:"rescan_interval_ms,omitempty" toml:"rescan_interval_ms,omitempty"`
-	MaxRescanPerCycle        *int  `json:"max_rescan_per_cycle,omitempty" toml:"max_rescan_per_cycle,omitempty"`
+	Enabled                *bool `json:"enabled,omitempty" toml:"enabled,omitempty"`
+	Workers                *int  `json:"workers,omitempty" toml:"workers,omitempty"`
+	BufferSkipThresholdPct *int  `json:"buffer_skip_threshold_pct,omitempty" toml:"buffer_skip_threshold_pct,omitempty"`
+	RescanIntervalMs       *int  `json:"rescan_interval_ms,omitempty" toml:"rescan_interval_ms,omitempty"`
+	MaxRescanPerCycle      *int  `json:"max_rescan_per_cycle,omitempty" toml:"max_rescan_per_cycle,omitempty"`
 }
 
 type ServiceSection struct {
@@ -340,103 +340,137 @@ type ConfigReloadResponse struct {
 }
 
 type Overview struct {
-	EngineMode           string         `json:"engineMode"`
-	EngineRunning        bool           `json:"engineRunning"`
-	VolumeCount          int            `json:"volumeCount"`
-	LiveHandleCount      int            `json:"liveHandleCount"`
-	ZoneCount            int            `json:"zoneCount"`
-	BufferFillPercent    int            `json:"bufferFillPercent"`
-	BufferPendingEntries uint64         `json:"bufferPendingEntries"`
-	AllocatorFreeBlocks  uint64         `json:"allocatorFreeBlocks"`
-	AllocatorTotalBlocks uint64         `json:"allocatorTotalBlocks"`
-	UblkDevices          []uint32         `json:"ublkDevices"`
+	EngineMode           string            `json:"engineMode"`
+	EngineRunning        bool              `json:"engineRunning"`
+	VolumeCount          int               `json:"volumeCount"`
+	LiveHandleCount      int               `json:"liveHandleCount"`
+	ZoneCount            int               `json:"zoneCount"`
+	BufferFillPercent    int               `json:"bufferFillPercent"`
+	BufferPendingEntries uint64            `json:"bufferPendingEntries"`
+	BufferPayloadBytes   uint64            `json:"bufferPayloadBytes"`
+	BufferPayloadLimit   uint64            `json:"bufferPayloadLimit"`
+	AllocatorFreeBlocks  uint64            `json:"allocatorFreeBlocks"`
+	AllocatorTotalBlocks uint64            `json:"allocatorTotalBlocks"`
+	UblkDevices          []uint32          `json:"ublkDevices"`
 	BufferShards         []BufferShardJSON `json:"bufferShards"`
-	CompressionRatio     float64          `json:"compressionRatio"`
-	DedupHitRate         float64        `json:"dedupHitRate"`
-	DataReductionRatio   float64        `json:"dataReductionRatio"`
-	Metrics              map[string]any `json:"metrics"`
-	RawStatus            string         `json:"rawStatus"`
+	CompressionRatio     float64           `json:"compressionRatio"`
+	DedupHitRate         float64           `json:"dedupHitRate"`
+	DataReductionRatio   float64           `json:"dataReductionRatio"`
+	Metrics              map[string]any    `json:"metrics"`
+	RawStatus            string            `json:"rawStatus"`
 }
 
 // StatusJSON matches the Rust status-json IPC response.
 type StatusJSON struct {
-	Mode        string              `json:"mode"`
-	UblkDevices []uint32            `json:"ublk_devices"`
-	Status      *EngineStatusJSON   `json:"status"`
+	Mode        string            `json:"mode"`
+	UblkDevices []uint32          `json:"ublk_devices"`
+	Status      *EngineStatusJSON `json:"status"`
 }
 
 // EngineStatusJSON matches Rust EngineStatusSnapshot (serialized).
 type EngineStatusJSON struct {
-	Mode                 string              `json:"mode"`
-	VolumeCount          int                 `json:"volume_count"`
-	LiveHandleCount      int                 `json:"live_handle_count"`
-	ZoneCount            *int                `json:"zone_count"`
-	BufferPendingEntries *uint64             `json:"buffer_pending_entries"`
-	BufferFillPct        *int                `json:"buffer_fill_pct"`
-	BufferShards         []BufferShardJSON   `json:"buffer_shards"`
-	AllocatorFreeBlocks  *uint64             `json:"allocator_free_blocks"`
-	AllocatorTotalBlocks *uint64             `json:"allocator_total_blocks"`
-	Metrics              MetricsJSON         `json:"metrics"`
+	Mode                 string            `json:"mode"`
+	VolumeCount          int               `json:"volume_count"`
+	LiveHandleCount      int               `json:"live_handle_count"`
+	ZoneCount            *int              `json:"zone_count"`
+	BufferPendingEntries *uint64           `json:"buffer_pending_entries"`
+	BufferFillPct        *int              `json:"buffer_fill_pct"`
+	BufferPayloadBytes   *uint64           `json:"buffer_payload_memory_bytes"`
+	BufferPayloadLimit   *uint64           `json:"buffer_payload_memory_limit_bytes"`
+	BufferShards         []BufferShardJSON `json:"buffer_shards"`
+	AllocatorFreeBlocks  *uint64           `json:"allocator_free_blocks"`
+	AllocatorTotalBlocks *uint64           `json:"allocator_total_blocks"`
+	Metrics              MetricsJSON       `json:"metrics"`
 }
 
 type BufferShardJSON struct {
-	ShardIdx       int    `json:"shard_idx"`
-	UsedBytes      uint64 `json:"used_bytes"`
-	CapacityBytes  uint64 `json:"capacity_bytes"`
-	FillPct        int    `json:"fill_pct"`
-	PendingEntries uint64 `json:"pending_entries"`
-	HeadOffset     uint64 `json:"head_offset"`
-	TailOffset     uint64 `json:"tail_offset"`
+	ShardIdx       int     `json:"shard_idx"`
+	UsedBytes      uint64  `json:"used_bytes"`
+	CapacityBytes  uint64  `json:"capacity_bytes"`
+	FillPct        int     `json:"fill_pct"`
+	PendingEntries uint64  `json:"pending_entries"`
+	HeadOffset     uint64  `json:"head_offset"`
+	TailOffset     uint64  `json:"tail_offset"`
+	LogOrderLen    int     `json:"log_order_len"`
+	FlushedSeqsLen int     `json:"flushed_seqs_len"`
+	HeadSeq        *uint64 `json:"head_seq"`
+	HeadRemaining  *uint32 `json:"head_remaining_lbas"`
+	HeadAgeMs      *uint64 `json:"head_age_ms"`
+	HeadResidencyMs *uint64 `json:"head_residency_ms"`
 }
 
 // MetricsJSON matches Rust EngineMetricsSnapshot (serialized).
 type MetricsJSON struct {
-	UptimeSecs              uint64 `json:"uptime_secs"`
-	VolumeCreateOps         uint64 `json:"volume_create_ops"`
-	VolumeDeleteOps         uint64 `json:"volume_delete_ops"`
-	VolumeOpenOps           uint64 `json:"volume_open_ops"`
-	VolumeReadOps           uint64 `json:"volume_read_ops"`
-	VolumeReadBytes         uint64 `json:"volume_read_bytes"`
-	VolumeWriteOps          uint64 `json:"volume_write_ops"`
-	VolumeWriteBytes        uint64 `json:"volume_write_bytes"`
-	BufferAppends           uint64 `json:"buffer_appends"`
-	BufferAppendBytes       uint64 `json:"buffer_append_bytes"`
-	BufferLookupHits        uint64 `json:"buffer_lookup_hits"`
-	BufferLookupMisses      uint64 `json:"buffer_lookup_misses"`
-	ReadBufferHits          uint64 `json:"read_buffer_hits"`
-	ReadLv3Hits             uint64 `json:"read_lv3_hits"`
-	ReadUnmapped            uint64 `json:"read_unmapped"`
-	ReadCrcErrors           uint64 `json:"read_crc_errors"`
-	CoalesceRuns            uint64 `json:"coalesce_runs"`
-	CoalescedUnits          uint64 `json:"coalesced_units"`
-	CoalescedBytes          uint64 `json:"coalesced_bytes"`
-	CompressUnits           uint64 `json:"compress_units"`
-	CompressInputBytes      uint64 `json:"compress_input_bytes"`
-	CompressOutputBytes     uint64 `json:"compress_output_bytes"`
-	DedupHits               uint64 `json:"dedup_hits"`
-	DedupMisses             uint64 `json:"dedup_misses"`
-	DedupSkippedUnits       uint64 `json:"dedup_skipped_units"`
-	FlushUnitsWritten       uint64 `json:"flush_units_written"`
-	FlushUnitBytes          uint64 `json:"flush_unit_bytes"`
-	FlushPackedSlotsWritten uint64 `json:"flush_packed_slots_written"`
-	FlushPackedBytes        uint64 `json:"flush_packed_bytes"`
-	FlushErrors             uint64 `json:"flush_errors"`
-	GcCycles                uint64 `json:"gc_cycles"`
-	GcCandidatesFound       uint64 `json:"gc_candidates_found"`
-	GcBlocksRewritten       uint64 `json:"gc_blocks_rewritten"`
-	GcErrors                uint64 `json:"gc_errors"`
-	DedupRescanCycles       uint64 `json:"dedup_rescan_cycles"`
-	DedupRescanHits         uint64 `json:"dedup_rescan_hits"`
-	DedupRescanErrors       uint64 `json:"dedup_rescan_errors"`
+	UptimeSecs                          uint64 `json:"uptime_secs"`
+	VolumeCreateOps                     uint64 `json:"volume_create_ops"`
+	VolumeDeleteOps                     uint64 `json:"volume_delete_ops"`
+	VolumeOpenOps                       uint64 `json:"volume_open_ops"`
+	VolumeReadOps                       uint64 `json:"volume_read_ops"`
+	VolumeReadBytes                     uint64 `json:"volume_read_bytes"`
+	VolumeWriteOps                      uint64 `json:"volume_write_ops"`
+	VolumeWriteBytes                    uint64 `json:"volume_write_bytes"`
+	BufferAppends                       uint64 `json:"buffer_appends"`
+	BufferAppendBytes                   uint64 `json:"buffer_append_bytes"`
+	BufferWriteOps                      uint64 `json:"buffer_write_ops"`
+	BufferWriteBytes                    uint64 `json:"buffer_write_bytes"`
+	BufferBackpressureEvents            uint64 `json:"buffer_backpressure_events"`
+	BufferBackpressureWaitNs            uint64 `json:"buffer_backpressure_wait_ns"`
+	BufferHydrationSkippedDueToMemLimit uint64 `json:"buffer_hydration_skipped_due_to_mem_limit"`
+	BufferHydrationHeadBypassCount      uint64 `json:"buffer_hydration_head_bypass_count"`
+	BufferLookupHits                    uint64 `json:"buffer_lookup_hits"`
+	BufferLookupMisses                  uint64 `json:"buffer_lookup_misses"`
+	BufferReadOps                       uint64 `json:"buffer_read_ops"`
+	BufferReadBytes                     uint64 `json:"buffer_read_bytes"`
+	ReadBufferHits                      uint64 `json:"read_buffer_hits"`
+	ReadLv3Hits                         uint64 `json:"read_lv3_hits"`
+	Lv3ReadOps                          uint64 `json:"lv3_read_ops"`
+	Lv3ReadBytes                        uint64 `json:"lv3_read_bytes"`
+	Lv3WriteOps                         uint64 `json:"lv3_write_ops"`
+	Lv3WriteBytes                       uint64 `json:"lv3_write_bytes"`
+	ReadUnmapped                        uint64 `json:"read_unmapped"`
+	ReadCrcErrors                       uint64 `json:"read_crc_errors"`
+	CoalesceRuns                        uint64 `json:"coalesce_runs"`
+	CoalescedUnits                      uint64 `json:"coalesced_units"`
+	CoalescedBytes                      uint64 `json:"coalesced_bytes"`
+	CompressUnits                       uint64 `json:"compress_units"`
+	CompressInputBytes                  uint64 `json:"compress_input_bytes"`
+	CompressOutputBytes                 uint64 `json:"compress_output_bytes"`
+	DedupHits                           uint64 `json:"dedup_hits"`
+	DedupMisses                         uint64 `json:"dedup_misses"`
+	DedupSkippedUnits                   uint64 `json:"dedup_skipped_units"`
+	DedupHitFailures                    uint64 `json:"dedup_hit_failures"`
+	DedupLookupOps                      uint64 `json:"dedup_lookup_ops"`
+	DedupLookupNs                       uint64 `json:"dedup_lookup_ns"`
+	DedupLiveCheckOps                   uint64 `json:"dedup_live_check_ops"`
+	DedupLiveCheckNs                    uint64 `json:"dedup_live_check_ns"`
+	DedupStaleIndexEntries              uint64 `json:"dedup_stale_index_entries"`
+	DedupStaleDeleteNs                  uint64 `json:"dedup_stale_delete_ns"`
+	DedupHitCommitOps                   uint64 `json:"dedup_hit_commit_ops"`
+	DedupHitCommitNs                    uint64 `json:"dedup_hit_commit_ns"`
+	FlushUnitsWritten                   uint64 `json:"flush_units_written"`
+	FlushUnitBytes                      uint64 `json:"flush_unit_bytes"`
+	FlushPackedSlotsWritten             uint64 `json:"flush_packed_slots_written"`
+	FlushPackedBytes                    uint64 `json:"flush_packed_bytes"`
+	FlushErrors                         uint64 `json:"flush_errors"`
+	FlushWriterPrecheckLivePbaOps       uint64 `json:"flush_writer_precheck_live_pba_ops"`
+	FlushWriterPrecheckLivePbaNs        uint64 `json:"flush_writer_precheck_live_pba_ns"`
+	FlushWriterPrecheckLivePbaFailures  uint64 `json:"flush_writer_precheck_live_pba_failures"`
+	GcCycles                            uint64 `json:"gc_cycles"`
+	GcCandidatesFound                   uint64 `json:"gc_candidates_found"`
+	GcBlocksRewritten                   uint64 `json:"gc_blocks_rewritten"`
+	GcErrors                            uint64 `json:"gc_errors"`
+	DedupRescanCycles                   uint64 `json:"dedup_rescan_cycles"`
+	DedupRescanHits                     uint64 `json:"dedup_rescan_hits"`
+	DedupRescanErrors                   uint64 `json:"dedup_rescan_errors"`
 }
 
 // VolumeJSON matches the enriched volumes-json IPC response.
 type VolumeJSON struct {
-	ID          string            `json:"id"`
-	SizeBytes   uint64            `json:"size_bytes"`
-	BlockSize   uint32            `json:"block_size"`
-	Compression any               `json:"compression"`
-	CreatedAt   uint64            `json:"created_at"`
-	ZoneCount   uint32            `json:"zone_count"`
-	Metrics     *VolumeIOMetrics  `json:"metrics"`
+	ID          string           `json:"id"`
+	SizeBytes   uint64           `json:"size_bytes"`
+	BlockSize   uint32           `json:"block_size"`
+	Compression any              `json:"compression"`
+	CreatedAt   uint64           `json:"created_at"`
+	ZoneCount   uint32           `json:"zone_count"`
+	Metrics     *VolumeIOMetrics `json:"metrics"`
 }

@@ -47,6 +47,12 @@
                   <th>Used</th>
                   <th>Capacity</th>
                   <th>Pending</th>
+                  <th>Log Queue</th>
+                  <th>Flushed Stuck</th>
+                  <th>Head Seq</th>
+                  <th>Head Remaining</th>
+                  <th>Head Age</th>
+                  <th>Head Residency</th>
                   <th>Head</th>
                   <th>Tail</th>
                 </tr>
@@ -65,6 +71,12 @@
                   <td><code>{{ fmtSize(s.used_bytes) }}</code></td>
                   <td><code>{{ fmtSize(s.capacity_bytes) }}</code></td>
                   <td><code>{{ s.pending_entries }}</code></td>
+                  <td><code>{{ s.log_order_len ?? '-' }}</code></td>
+                  <td><code :class="{ 'text-danger': s.flushed_seqs_len > 100 }">{{ s.flushed_seqs_len ?? '-' }}</code></td>
+                  <td><code>{{ s.head_seq ?? '-' }}</code></td>
+                  <td><code :class="{ 'text-danger': (s.head_remaining_lbas ?? 0) > 0 }">{{ s.head_remaining_lbas ?? '-' }}</code></td>
+                  <td><code :class="{ 'text-danger': (s.head_age_ms ?? 0) > 5000 }">{{ s.head_age_ms != null ? Math.round(s.head_age_ms / 1000) + 's' : '-' }}</code></td>
+                  <td><code :class="{ 'text-danger': (s.head_residency_ms ?? 0) > 5000 }">{{ s.head_residency_ms != null ? Math.round(s.head_residency_ms / 1000) + 's' : '-' }}</code></td>
                   <td><code>{{ s.head_offset }}</code></td>
                   <td><code>{{ s.tail_offset }}</code></td>
                 </tr>
@@ -110,6 +122,10 @@
             <div class="metric-row">
               <span>buffer_pending</span>
               <code>{{ overview.bufferPendingEntries ?? '-' }}</code>
+            </div>
+            <div class="metric-row">
+              <span>payload_memory</span>
+              <code>{{ fmtSize(overview.bufferPayloadBytes || 0) }} / {{ fmtSize(overview.bufferPayloadLimit || 0) }}</code>
             </div>
             <div class="metric-row">
               <span>live_handles</span>
