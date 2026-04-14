@@ -1,8 +1,11 @@
 <template>
   <div class="login-page">
+    <div class="login-lang-bar">
+      <LanguageSwitcher />
+    </div>
     <div class="login-shell">
       <section class="login-hero">
-        <div class="brand-mark mb-3">ONYX CONTROL</div>
+        <BrandLogo badge="ONYX CONTROL" title="Storage Dashboard" layout="hero" />
         <h1 class="page-title mb-3">{{ $t('login.heroTitle') }}</h1>
         <p class="text-secondary mb-4">
           {{ $t('login.heroDesc') }}
@@ -75,6 +78,8 @@ import { useRouter } from 'vue-router'
 import http from '../api/http'
 import { useAuthStore } from '../stores/auth'
 import { translateError } from '../i18n/errorMap'
+import BrandLogo from '../components/BrandLogo.vue'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 
 const { t } = useI18n()
 const router = useRouter()

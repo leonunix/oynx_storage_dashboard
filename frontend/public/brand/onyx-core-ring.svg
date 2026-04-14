@@ -1,0 +1,40 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgCore" x1="82" y1="54" x2="432" y2="458" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#16243C"/>
+      <stop offset="0.56" stop-color="#0B1120"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="ringCore" x1="118" y1="138" x2="394" y2="374" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7DD3FC"/>
+      <stop offset="0.46" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#14B8A6"/>
+    </linearGradient>
+    <linearGradient id="diamondCore" x1="200" y1="188" x2="314" y2="322" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1E293B"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <radialGradient id="glowCore" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(258 250) rotate(90) scale(214)">
+      <stop stop-color="#38BDF8" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#38BDF8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="36" y="36" width="440" height="440" rx="120" fill="url(#bgCore)"/>
+  <circle cx="258" cy="250" r="186" fill="url(#glowCore)"/>
+
+  <path d="M146 182A158 158 0 0 1 228 108" stroke="url(#ringCore)" stroke-width="34" stroke-linecap="round"/>
+  <path d="M302 108A158 158 0 0 1 382 190" stroke="url(#ringCore)" stroke-width="34" stroke-linecap="round"/>
+  <path d="M382 322A158 158 0 0 1 288 396" stroke="url(#ringCore)" stroke-width="34" stroke-linecap="round"/>
+  <path d="M210 402A158 158 0 0 1 126 318" stroke="url(#ringCore)" stroke-width="34" stroke-linecap="round"/>
+
+  <circle cx="256" cy="128" r="10" fill="#E0F2FE"/>
+  <circle cx="386" cy="256" r="10" fill="#5EEAD4"/>
+  <circle cx="256" cy="384" r="10" fill="#38BDF8"/>
+  <circle cx="126" cy="256" r="10" fill="#93C5FD"/>
+
+  <path d="M256 166L346 256L256 346L166 256L256 166Z" fill="url(#diamondCore)"/>
+  <path d="M256 194L318 256L256 318L194 256L256 194Z" fill="#111827"/>
+  <path d="M214 246H298L272 272H188L214 246Z" fill="url(#ringCore)"/>
+  <path d="M232 210H284L258 236H206L232 210Z" fill="#E0F2FE" fill-opacity="0.72"/>
+</svg>

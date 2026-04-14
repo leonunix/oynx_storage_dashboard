@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Onyx Brand Concepts</title>
+    <style>
+      :root {
+        --page-bg: #edf3fb;
+        --surface: rgba(255, 255, 255, 0.9);
+        --surface-strong: #ffffff;
+        --text: #0f172a;
+        --muted: #475569;
+        --border: rgba(148, 163, 184, 0.24);
+        --shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+        --radius: 28px;
+        --chip-bg: #e0f2fe;
+        --chip-text: #155e75;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, "SF Pro Display", "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 34%),
+          radial-gradient(circle at top right, rgba(13, 148, 136, 0.14), transparent 28%),
+          linear-gradient(180deg, #f8fbff 0%, var(--page-bg) 100%);
+      }
+
+      main {
+        width: min(1380px, calc(100vw - 48px));
+        margin: 0 auto;
+        padding: 40px 0 56px;
+      }
+
+      .hero {
+        margin-bottom: 28px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: var(--chip-bg);
+        color: var(--chip-text);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 16px 0 10px;
+        font-size: clamp(32px, 4vw, 46px);
+        line-height: 1.06;
+      }
+
+      .hero p {
+        margin: 0;
+        max-width: 820px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.65;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 22px;
+      }
+
+      .card {
+        display: grid;
+        gap: 22px;
+        padding: 24px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88));
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .card h2 {
+        margin: 0;
+        font-size: 24px;
+      }
+
+      .label {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .summary {
+        margin: 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      .showcase {
+        display: grid;
+        gap: 18px;
+      }
+
+      .stage {
+        display: grid;
+        place-items: center;
+        min-height: 268px;
+        padding: 18px;
+        border-radius: 24px;
+        background:
+          radial-gradient(circle at top left, rgba(37, 99, 235, 0.09), transparent 34%),
+          linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+        border: 1px solid rgba(148, 163, 184, 0.24);
+      }
+
+      .lockup {
+        display: grid;
+        grid-template-columns: 132px 1fr;
+        align-items: center;
+        gap: 20px;
+        width: 100%;
+      }
+
+      .logo-wordmark {
+        display: grid;
+        gap: 6px;
+      }
+
+      .logo-wordmark strong {
+        font-size: 32px;
+        letter-spacing: 0.08em;
+      }
+
+      .logo-wordmark span {
+        color: var(--muted);
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #f8fafc;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .sizes {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .size-chip {
+        display: grid;
+        place-items: center;
+        width: 74px;
+        height: 74px;
+        border-radius: 20px;
+        background: var(--surface-strong);
+        border: 1px solid rgba(148, 163, 184, 0.24);
+      }
+
+      .size-chip.small {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+      }
+
+      .size-chip.tiny {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+      }
+
+      .size-chip img {
+        display: block;
+      }
+
+      .notes {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .notes li {
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(248, 250, 252, 0.84);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      @media (max-width: 1120px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .lockup {
+          grid-template-columns: 104px 1fr;
+        }
+
+        .stage {
+          min-height: 220px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div class="eyebrow">Onyx Brand Study</div>
+        <h1>三个方向都做成成品预览了，直接挑气质最对的那个。</h1>
+        <p>
+          每个方案都同时展示了大尺寸主视觉、横向 lockup 感觉，以及小尺寸图标缩放效果。
+          如果你挑中一个，我下一步就把它正式接进 dashboard 侧栏、登录页和 favicon。
+        </p>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <h2>Facet O</h2>
+              <p class="summary">黑曜石切面组成抽象 O，强调产品名和高识别度，最稳也最适合 favicon。</p>
+            </div>
+            <div class="label">Concept 1</div>
+          </div>
+
+          <div class="showcase">
+            <div class="stage">
+              <div class="lockup">
+                <img src="./onyx-facet-o.svg" alt="Facet O logo" width="132" height="132" />
+                <div class="logo-wordmark">
+                  <strong>ONYX</strong>
+                  <span>Storage Dashboard</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="sizes">
+              <div class="size-chip"><img src="./onyx-facet-o.svg" alt="" width="48" height="48" /></div>
+              <div class="size-chip small"><img src="./onyx-facet-o.svg" alt="" width="30" height="30" /></div>
+              <div class="size-chip tiny"><img src="./onyx-facet-o.svg" alt="" width="20" height="20" /></div>
+            </div>
+
+            <div class="chips">
+              <div class="chip">高级感强</div>
+              <div class="chip">辨识度稳定</div>
+              <div class="chip">最适合图标化</div>
+            </div>
+
+            <ul class="notes">
+              <li>更像基础设施产品品牌，不会落入“硬盘图标”老套路。</li>
+              <li>和现在 dashboard 的蓝绿主色最容易融合，改造成本最低。</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <h2>Monolith</h2>
+              <p class="summary">把 Onyx 当成一块发光切缝的矿石立柱来表现，技术感和“存储引擎味”最强。</p>
+            </div>
+            <div class="label">Concept 2</div>
+          </div>
+
+          <div class="showcase">
+            <div class="stage">
+              <div class="lockup">
+                <img src="./onyx-monolith.svg" alt="Monolith logo" width="132" height="132" />
+                <div class="logo-wordmark">
+                  <strong>ONYX</strong>
+                  <span>Engine Control</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="sizes">
+              <div class="size-chip"><img src="./onyx-monolith.svg" alt="" width="48" height="48" /></div>
+              <div class="size-chip small"><img src="./onyx-monolith.svg" alt="" width="30" height="30" /></div>
+              <div class="size-chip tiny"><img src="./onyx-monolith.svg" alt="" width="20" height="20" /></div>
+            </div>
+
+            <div class="chips">
+              <div class="chip">硬核感最强</div>
+              <div class="chip">最像存储设备</div>
+              <div class="chip">存在感很高</div>
+            </div>
+
+            <ul class="notes">
+              <li>如果你想让产品气质更“内核工程”“写路径”“数据通道”，这个方向最直接。</li>
+              <li>缩到极小尺寸时不如 Facet O 那么稳，但在登录页和海报位很有冲击力。</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <h2>Core Ring</h2>
+              <p class="summary">中心核心加外部数据环，偏控制平面、观测与编排，整体更企业化和现代化。</p>
+            </div>
+            <div class="label">Concept 3</div>
+          </div>
+
+          <div class="showcase">
+            <div class="stage">
+              <div class="lockup">
+                <img src="./onyx-core-ring.svg" alt="Core Ring logo" width="132" height="132" />
+                <div class="logo-wordmark">
+                  <strong>ONYX</strong>
+                  <span>Control Plane</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="sizes">
+              <div class="size-chip"><img src="./onyx-core-ring.svg" alt="" width="48" height="48" /></div>
+              <div class="size-chip small"><img src="./onyx-core-ring.svg" alt="" width="30" height="30" /></div>
+              <div class="size-chip tiny"><img src="./onyx-core-ring.svg" alt="" width="20" height="20" /></div>
+            </div>
+
+            <div class="chips">
+              <div class="chip">控制平面感强</div>
+              <div class="chip">企业级最稳重</div>
+              <div class="chip">适合 dashboard</div>
+            </div>
+
+            <ul class="notes">
+              <li>更偏“调度中心 / 观测中心”的品牌感，适合做后台系统和登录页品牌头图。</li>
+              <li>图标层面也不错，但会比 Facet O 稍微更抽象一点。</li>
+            </ul>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

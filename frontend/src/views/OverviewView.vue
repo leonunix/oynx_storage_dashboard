@@ -8,197 +8,74 @@
       </div>
     </template>
 
-    <FlowPipeline :snapshot="latest" :rates="telemetry.rates" :window-label="historyWindowLabel" />
+    <!-- Hero: animated data flow diagram -->
+    <DataFlowDiagram :snapshot="latest" :rates="telemetry.rates" />
 
-    <div class="overview-kpis">
-      <KpiTrendCard
-        v-for="card in kpiCards"
-        :key="card.label"
-        :icon="card.icon"
-        :label="card.label"
-        :value="card.value"
-        :note="card.note"
-        :series="card.series"
-        :color="card.color"
-        :baseline="card.baseline || 'zero'"
-      />
+    <!-- Compact stat cards -->
+    <div class="stat-row">
+      <div v-for="card in statCards" :key="card.label" class="stat-pill">
+        <div class="stat-pill-icon" :style="{ color: card.color }">
+          <i :class="card.icon"></i>
+        </div>
+        <div>
+          <div class="stat-pill-label">{{ card.label }}</div>
+          <div class="stat-pill-value">{{ card.value }}</div>
+        </div>
+      </div>
     </div>
 
-    <div class="row g-4">
-      <div class="col-12 col-xl-8">
-        <div class="content-card chart-card">
-          <div class="section-header">
-            <div>
-              <h3>Write path throughput</h3>
-              <p class="chart-note">Follow logical ingress, cache absorption and durable LV3 output in one view.</p>
-            </div>
-            <span class="badge text-bg-dark">{{ historyWindowLabel }}</span>
-          </div>
-          <div class="chart-legend">
-            <span v-for="serie in writeFlowSeries" :key="serie.key">
-              <i class="legend-dot" :style="{ background: serie.color }"></i>
-              {{ serie.label }}
-            </span>
-          </div>
-          <TrendChart :series="writeFlowSeries" :height="250" format="bytesRate" />
+    <!-- Buffer lanes (visual) -->
+    <div class="content-card">
+      <div class="section-header">
+        <div>
+          <h3>Buffer lanes</h3>
+          <p class="chart-note">Per-shard pressure, queue depth, and flush health at a glance.</p>
         </div>
+        <span class="badge text-bg-dark">{{ bufferShards.length }} shards</span>
       </div>
 
-      <div class="col-12 col-xl-4">
-        <div class="content-card chart-card h-100">
-          <div class="section-header">
-            <div>
-              <h3>Buffer + allocator posture</h3>
-              <p class="chart-note">Pressure indicators that tell us how much headroom the hot path still has.</p>
+      <div v-if="bufferShards.length" class="lane-grid">
+        <div v-for="shard in bufferShards" :key="shard.shard_idx" class="lane-card" :class="laneClass(shard)">
+          <!-- top: lane id + fill bar -->
+          <div class="lane-top">
+            <div class="lane-id">#{{ shard.shard_idx }}</div>
+            <div class="lane-fill-track">
+              <div class="lane-fill-bar" :class="fillClass(shard.fill_pct)" :style="{ width: `${shard.fill_pct}%` }">
+                <span class="lane-fill-label" v-if="shard.fill_pct >= 20">{{ shard.fill_pct }}%</span>
+              </div>
+              <span class="lane-fill-label lane-fill-label-out" v-if="shard.fill_pct < 20">{{ shard.fill_pct }}%</span>
             </div>
           </div>
-          <div class="metric-stack">
-            <div class="metric-strip">
-              <span>Engine mode</span>
-              <strong>{{ latest?.engineMode || overview.engineMode || '-' }}</strong>
+          <!-- metrics row -->
+          <div class="lane-metrics">
+            <div class="lane-metric">
+              <span class="lane-metric-label">Used</span>
+              <span class="lane-metric-value">{{ formatBytes(shard.used_bytes) }}</span>
             </div>
-            <div class="metric-strip">
-              <span>Buffer memory</span>
-              <strong>{{ formatBytes(latest?.bufferPayloadBytes) }} / {{ formatBytes(latest?.bufferPayloadLimit) }}</strong>
+            <div class="lane-metric">
+              <span class="lane-metric-label">Pending</span>
+              <span class="lane-metric-value">{{ shard.pending_entries }}</span>
             </div>
-            <div class="metric-strip">
-              <span>Allocator usage</span>
-              <strong>{{ formatPercent(latest?.allocatorUsagePercent) }}</strong>
+            <div class="lane-metric">
+              <span class="lane-metric-label">Queue</span>
+              <span class="lane-metric-value">{{ shard.log_order_len ?? 0 }}</span>
             </div>
-            <div class="metric-strip">
-              <span>ublk devices</span>
-              <strong>{{ ublkDevices.length ? ublkDevices.map((id) => `/dev/ublkb${id}`).join(', ') : 'none' }}</strong>
+            <div class="lane-metric">
+              <span class="lane-metric-label">Stuck</span>
+              <span class="lane-metric-value" :class="{ 'text-danger': shard.flushed_seqs_len > 100 }">{{ shard.flushed_seqs_len ?? 0 }}</span>
+            </div>
+            <div class="lane-metric">
+              <span class="lane-metric-label">Head age</span>
+              <span class="lane-metric-value">{{ shard.head_age_ms != null ? `${Math.round(shard.head_age_ms / 1000)}s` : '-' }}</span>
+            </div>
+            <div class="lane-metric">
+              <span class="lane-metric-label">Residency</span>
+              <span class="lane-metric-value">{{ shard.head_residency_ms != null ? `${Math.round(shard.head_residency_ms / 1000)}s` : '-' }}</span>
             </div>
           </div>
-          <div class="chart-legend mt-3">
-            <span v-for="serie in bufferFillSeries" :key="serie.key">
-              <i class="legend-dot" :style="{ background: serie.color }"></i>
-              {{ serie.label }}
-            </span>
-          </div>
-          <TrendChart :series="bufferFillSeries" :height="215" format="percent" />
         </div>
       </div>
-
-      <div class="col-12 col-xl-6">
-        <div class="content-card chart-card">
-          <div class="section-header">
-            <div>
-              <h3>Read path and efficiency</h3>
-              <p class="chart-note">Read latency starts with hit rate, but the whole path stays visible here.</p>
-            </div>
-          </div>
-          <div class="chart-legend">
-            <span v-for="serie in readFlowSeries" :key="serie.key">
-              <i class="legend-dot" :style="{ background: serie.color }"></i>
-              {{ serie.label }}
-            </span>
-          </div>
-          <TrendChart :series="readFlowSeries" :height="220" format="bytesRate" />
-        </div>
-      </div>
-
-      <div class="col-12 col-xl-6">
-        <div class="content-card chart-card">
-          <div class="section-header">
-            <div>
-              <h3>Flush backlog</h3>
-              <p class="chart-note">Queue depth is easier to reason about when it is not mixed with percentages or bytes.</p>
-            </div>
-          </div>
-          <div class="chart-legend">
-            <span v-for="serie in pendingEntriesSeries" :key="serie.key">
-              <i class="legend-dot" :style="{ background: serie.color }"></i>
-              {{ serie.label }}
-            </span>
-          </div>
-          <TrendChart :series="pendingEntriesSeries" :height="220" format="number" />
-        </div>
-      </div>
-
-      <div class="col-12 col-xl-6">
-        <div class="content-card chart-card">
-          <div class="section-header">
-            <div>
-              <h3>Reduction ratios</h3>
-              <p class="chart-note">Compression and total data reduction now share a chart because they use the same unit.</p>
-            </div>
-          </div>
-          <div class="chart-legend">
-            <span v-for="serie in ratioSeries" :key="serie.key">
-              <i class="legend-dot" :style="{ background: serie.color }"></i>
-              {{ serie.label }}
-            </span>
-          </div>
-          <TrendChart :series="ratioSeries" :height="220" baseline="fit" format="ratio" />
-        </div>
-      </div>
-
-      <div class="col-12 col-xl-6">
-        <div class="content-card chart-card">
-          <div class="section-header">
-            <div>
-              <h3>Dedup hit rate</h3>
-              <p class="chart-note">This now stands on its own scale, so the percentage curve stays readable.</p>
-            </div>
-          </div>
-          <div class="chart-legend">
-            <span v-for="serie in dedupRateSeries" :key="serie.key">
-              <i class="legend-dot" :style="{ background: serie.color }"></i>
-              {{ serie.label }}
-            </span>
-          </div>
-          <TrendChart :series="dedupRateSeries" :height="220" baseline="fit" format="percent" />
-        </div>
-      </div>
-
-      <div class="col-12">
-        <div class="content-card">
-          <div class="section-header">
-            <div>
-              <h3>Buffer lanes</h3>
-              <p class="chart-note">Shard-level visibility helps spot skew, stuck heads, or an unhealthy flush tail immediately.</p>
-            </div>
-            <span class="badge text-bg-dark">{{ bufferShards.length }} shards</span>
-          </div>
-          <div v-if="bufferShards.length" class="table-responsive">
-            <table class="table align-middle table-sm">
-              <thead>
-                <tr>
-                  <th>Lane</th>
-                  <th>Fill</th>
-                  <th>Used</th>
-                  <th>Pending</th>
-                  <th>Queue</th>
-                  <th>Flushed stuck</th>
-                  <th>Head age</th>
-                  <th>Residency</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="shard in bufferShards" :key="shard.shard_idx">
-                  <td><strong>#{{ shard.shard_idx }}</strong></td>
-                  <td>
-                    <div class="d-flex align-items-center gap-2">
-                      <div class="fill-bar">
-                        <div class="fill-bar-inner" :style="{ width: `${shard.fill_pct}%` }" :class="fillClass(shard.fill_pct)"></div>
-                      </div>
-                      <code>{{ shard.fill_pct }}%</code>
-                    </div>
-                  </td>
-                  <td><code>{{ formatBytes(shard.used_bytes) }}</code></td>
-                  <td><code>{{ shard.pending_entries }}</code></td>
-                  <td><code>{{ shard.log_order_len ?? 0 }}</code></td>
-                  <td><code :class="{ 'text-danger': shard.flushed_seqs_len > 100 }">{{ shard.flushed_seqs_len ?? 0 }}</code></td>
-                  <td><code>{{ shard.head_age_ms != null ? `${Math.round(shard.head_age_ms / 1000)}s` : '-' }}</code></td>
-                  <td><code>{{ shard.head_residency_ms != null ? `${Math.round(shard.head_residency_ms / 1000)}s` : '-' }}</code></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div v-else class="empty-note">No shard telemetry reported yet.</div>
-        </div>
-      </div>
+      <div v-else class="empty-note">No shard telemetry reported yet.</div>
     </div>
   </AppShell>
 </template>
@@ -208,18 +85,12 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import http from '../api/http'
 import AppShell from '../components/AppShell.vue'
-import FlowPipeline from '../components/FlowPipeline.vue'
-import KpiTrendCard from '../components/KpiTrendCard.vue'
-import TrendChart from '../components/TrendChart.vue'
+import DataFlowDiagram from '../components/DataFlowDiagram.vue'
 import {
-  buildSeries,
   formatBytes,
-  formatBytesPerSec,
   formatDateTime,
   formatPercent,
   formatRatio,
-  formatWindowLabel,
-  seriesForKey,
 } from '../lib/telemetry'
 import { useAuthStore } from '../stores/auth'
 
@@ -237,102 +108,32 @@ let refreshHandle = null
 
 const latest = computed(() => telemetry.value.latest)
 const bufferShards = computed(() => overview.value.bufferShards || [])
-const ublkDevices = computed(() => overview.value.ublkDevices || [])
-const historyWindowLabel = computed(() => formatWindowLabel(HISTORY_WINDOW))
 const lastRefreshLabel = computed(() => formatDateTime(lastLoadedAt.value))
 
-const writeFlowSeries = computed(() =>
-  buildSeries(telemetry.value, [
-    { key: 'client_write_bps', label: 'Client ingress', color: '#2563eb' },
-    { key: 'buffer_write_bps', label: 'Buffer absorb', color: '#0d9488' },
-    { key: 'lv3_write_bps', label: 'LV3 durable write', color: '#0891b2' },
-  ]),
-)
-
-const readFlowSeries = computed(() =>
-  buildSeries(telemetry.value, [
-    { key: 'client_read_bps', label: 'Client reads', color: '#475569' },
-    { key: 'buffer_read_bps', label: 'Buffer hits', color: '#3b82f6' },
-    { key: 'lv3_read_bps', label: 'LV3 reads', color: '#f59e0b' },
-  ]),
-)
-
-const bufferFillSeries = computed(() =>
-  buildSeries(telemetry.value, [
-    { key: 'buffer_fill_pct', label: 'Buffer fill', color: '#ef4444' },
-  ]),
-)
-
-const pendingEntriesSeries = computed(() =>
-  buildSeries(telemetry.value, [
-    { key: 'buffer_pending_entries', label: 'Pending entries', color: '#2563eb' },
-  ]),
-)
-
-const ratioSeries = computed(() =>
-  buildSeries(telemetry.value, [
-    { key: 'compression_ratio', label: 'Compression', color: '#2563eb' },
-    { key: 'data_reduction_ratio', label: 'Data reduction', color: '#f59e0b' },
-  ]),
-)
-
-const dedupRateSeries = computed(() =>
-  buildSeries(telemetry.value, [
-    { key: 'dedup_hit_rate_pct', label: 'Dedup hit rate', color: '#0d9488' },
-  ]),
-)
-
-const kpiCards = computed(() => [
-  {
-    icon: 'bi bi-arrow-right-circle',
-    label: 'Client write',
-    value: formatBytesPerSec(telemetry.value.rates?.clientWriteBps),
-    note: 'Logical ingress over the minute-level history cadence.',
-    series: [{ key: 'client-write', points: seriesForKey(telemetry.value, 'client_write_bps') }],
-    color: '#2563eb',
-  },
-  {
-    icon: 'bi bi-hourglass-split',
-    label: 'Buffer fill',
-    value: formatPercent(latest.value?.bufferFillPercent, 0),
-    note: 'The first pressure signal to watch when traffic spikes.',
-    series: [{ key: 'buffer-fill', points: seriesForKey(telemetry.value, 'buffer_fill_pct') }],
-    color: '#ef4444',
-  },
-  {
-    icon: 'bi bi-magic',
-    label: 'Compression',
-    value: formatRatio(latest.value?.compressionRatio),
-    note: 'Compression ratio tracked from persisted samples, not browser-side deltas.',
-    series: [{ key: 'compression', points: seriesForKey(telemetry.value, 'compression_ratio') }],
-    color: '#0d9488',
-    baseline: 'fit',
-  },
-  {
-    icon: 'bi bi-intersect',
-    label: 'Dedup hit rate',
-    value: formatPercent(latest.value?.dedupHitRatePct),
-    note: 'A clearer picture of how much identical content the pipeline is finding.',
-    series: [{ key: 'dedup', points: seriesForKey(telemetry.value, 'dedup_hit_rate_pct') }],
-    color: '#f59e0b',
-    baseline: 'fit',
-  },
+const statCards = computed(() => [
   {
     icon: 'bi bi-bezier2',
     label: 'Data reduction',
     value: formatRatio(latest.value?.dataReductionRatio),
-    note: 'Compression plus dedup presented as one end-to-end gain number.',
-    series: [{ key: 'reduction', points: seriesForKey(telemetry.value, 'data_reduction_ratio') }],
-    color: '#475569',
-    baseline: 'fit',
+    color: '#0d9488',
   },
   {
-    icon: 'bi bi-hdd-network',
-    label: 'LV3 write',
-    value: formatBytesPerSec(telemetry.value.rates?.lv3WriteBps),
-    note: 'The durable side of the system, after packing and placement.',
-    series: [{ key: 'lv3-write', points: seriesForKey(telemetry.value, 'lv3_write_bps') }],
-    color: '#0891b2',
+    icon: 'bi bi-pie-chart',
+    label: 'Allocator usage',
+    value: formatPercent(latest.value?.allocatorUsagePercent),
+    color: '#6366f1',
+  },
+  {
+    icon: 'bi bi-hdd-stack',
+    label: 'Volumes',
+    value: `${latest.value?.volumeCount ?? 0}`,
+    color: '#2563eb',
+  },
+  {
+    icon: 'bi bi-gear-wide-connected',
+    label: 'Engine mode',
+    value: latest.value?.engineMode || '-',
+    color: '#475569',
   },
 ])
 
@@ -358,6 +159,12 @@ const fillClass = (pct) => {
   return 'fill-ok'
 }
 
+const laneClass = (shard) => {
+  if (shard.fill_pct >= 90 || shard.flushed_seqs_len > 100) return 'lane-alert'
+  if (shard.fill_pct >= 70) return 'lane-warm'
+  return ''
+}
+
 onMounted(async () => {
   await auth.fetchMe()
   await load()
@@ -372,16 +179,53 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.overview-kpis {
+/* ─── Stat pills ────────────────────────────────── */
+
+.stat-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
-.chart-card {
-  display: grid;
+.stat-pill {
+  display: flex;
+  align-items: center;
   gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--onyx-radius);
+  border: 1px solid var(--onyx-border);
+  background: var(--onyx-surface);
+  box-shadow: var(--onyx-shadow-sm);
 }
+
+.stat-pill-icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--onyx-radius-xs);
+  font-size: 1rem;
+  background: var(--onyx-surface-soft);
+  border: 1px solid var(--onyx-border);
+  flex-shrink: 0;
+}
+
+.stat-pill-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--onyx-muted);
+}
+
+.stat-pill-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 0.0625rem;
+}
+
+/* ─── Section helpers ───────────────────────────── */
 
 .chart-note {
   margin: 0.125rem 0 0;
@@ -389,86 +233,165 @@ onBeforeUnmount(() => {
   font-size: 0.8125rem;
 }
 
-.chart-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  color: var(--onyx-muted);
-  font-size: 0.8125rem;
-}
-
-.chart-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.legend-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.metric-stack {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.metric-strip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: var(--onyx-radius-sm);
-  background: var(--onyx-surface-soft);
-  border: 1px solid var(--onyx-border);
-  font-size: 0.8125rem;
-}
-
-.metric-strip span {
-  color: var(--onyx-muted);
-}
-
-.metric-strip strong {
-  text-align: right;
-  font-size: 0.8125rem;
-}
-
-.fill-bar {
-  width: 72px;
-  height: 6px;
-  background: var(--onyx-border);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.fill-bar-inner {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.fill-ok { background: var(--onyx-accent); }
-.fill-warning { background: var(--onyx-warm); }
-.fill-danger { background: var(--onyx-danger); }
-
 .empty-note {
   color: var(--onyx-muted);
   padding: 0.75rem 0;
   font-size: 0.875rem;
 }
 
-@media (max-width: 1100px) {
-  .overview-kpis {
+/* ─── Buffer lanes (visual cards) ───────────────── */
+
+.lane-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.625rem;
+}
+
+.lane-card {
+  display: grid;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--onyx-radius-sm);
+  border: 1px solid var(--onyx-border);
+  background: var(--onyx-surface);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.lane-warm {
+  border-color: #fbbf2440;
+  box-shadow: inset 0 0 0 1px #fbbf2418;
+}
+
+.lane-alert {
+  border-color: #ef444440;
+  box-shadow: inset 0 0 0 1px #ef444418;
+  animation: pulse-alert 2s ease-in-out infinite;
+}
+
+@keyframes pulse-alert {
+  0%, 100% { box-shadow: inset 0 0 0 1px #ef444418; }
+  50% { box-shadow: inset 0 0 0 1px #ef444430, 0 0 8px #ef444412; }
+}
+
+/* ─── Lane top (id + fill bar) ──────────────────── */
+
+.lane-top {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.lane-id {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--onyx-muted);
+  min-width: 1.75rem;
+}
+
+.lane-fill-track {
+  flex: 1;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--onyx-surface-soft);
+  border: 1px solid var(--onyx-border);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lane-fill-bar {
+  height: 100%;
+  border-radius: 3px 0 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.375rem;
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.lane-fill-bar.fill-ok {
+  background: linear-gradient(90deg, #0d948822, var(--onyx-accent));
+}
+
+.lane-fill-bar.fill-warning {
+  background: linear-gradient(90deg, #f59e0b22, var(--onyx-warm));
+}
+
+.lane-fill-bar.fill-danger {
+  background: linear-gradient(90deg, #ef444422, var(--onyx-danger));
+}
+
+.lane-fill-label {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  white-space: nowrap;
+}
+
+.lane-fill-label-out {
+  color: var(--onyx-muted);
+  text-shadow: none;
+  margin-left: 0.375rem;
+  position: relative;
+}
+
+/* ─── Lane metrics row ──────────────────────────── */
+
+.lane-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.375rem;
+}
+
+.lane-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.25rem 0.375rem;
+  border-radius: 3px;
+  background: var(--onyx-surface-soft);
+}
+
+.lane-metric-label {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--onyx-muted);
+}
+
+.lane-metric-value {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.text-danger {
+  color: var(--onyx-danger) !important;
+}
+
+/* ─── Responsive ────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .stat-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 760px) {
-  .overview-kpis {
+@media (max-width: 560px) {
+  .stat-row {
     grid-template-columns: 1fr;
+  }
+
+  .lane-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lane-metrics {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

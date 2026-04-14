@@ -1,0 +1,60 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgFacet" x1="84" y1="56" x2="428" y2="456" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#152238"/>
+      <stop offset="0.55" stop-color="#0B1120"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="ringFacet" x1="150" y1="116" x2="364" y2="396" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7DD3FC"/>
+      <stop offset="0.48" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#0D9488"/>
+    </linearGradient>
+    <linearGradient id="slashFacet" x1="294" y1="144" x2="378" y2="232" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E0F2FE"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <radialGradient id="glowFacet" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(332 182) rotate(128.29) scale(176.672)">
+      <stop stop-color="#38BDF8" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#38BDF8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="36" y="36" width="440" height="440" rx="120" fill="url(#bgFacet)"/>
+  <circle cx="334" cy="184" r="146" fill="url(#glowFacet)"/>
+  <circle cx="186" cy="356" r="126" fill="#34D399" fill-opacity="0.08"/>
+
+  <path
+    d="M256 88L350 122L402 210L382 320L294 408L172 390L110 302L130 192L218 104H256ZM256 166L222 178L196 222L206 274L248 316L304 324L338 290L350 238L328 194L284 166H256Z"
+    fill="url(#ringFacet)"
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+  />
+
+  <path
+    d="M210 122L258 106L352 140L378 186L348 206L326 170L258 146L220 158L210 122Z"
+    fill="#E0F2FE"
+    fill-opacity="0.18"
+  />
+  <path
+    d="M292 144L386 172L358 250L264 222L292 144Z"
+    fill="url(#slashFacet)"
+    fill-opacity="0.96"
+  />
+  <path
+    d="M300 140L394 168L384 196L290 168L300 140Z"
+    fill="#F8FAFC"
+    fill-opacity="0.55"
+  />
+
+  <path
+    d="M214 336L172 390L110 302L130 192L156 184L142 278L214 336Z"
+    fill="#020617"
+    fill-opacity="0.28"
+  />
+  <path
+    d="M248 316L304 324L338 290L350 238L326 194L284 166H256L248 316Z"
+    fill="#020617"
+    fill-opacity="0.16"
+  />
+</svg>

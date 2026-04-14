@@ -1,9 +1,8 @@
 <template>
   <div class="shell">
     <aside class="sidebar">
-      <div>
-        <div class="brand-mark">ONYX</div>
-        <h1 class="brand-title">Storage Dashboard</h1>
+      <div class="brand-block">
+        <BrandLogo badge="ONYX" title="Storage Dashboard" />
         <p class="brand-copy">
           {{ $t('shell.brandCopy') }}
         </p>
@@ -48,6 +47,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
+import BrandLogo from './BrandLogo.vue'
 import LanguageSwitcher from './LanguageSwitcher.vue'
 
 const { t } = useI18n()
