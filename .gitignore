@@ -1,3 +1,10 @@
+# Frontend
 frontend/node_modules
 frontend/dist
+
+# Backend runtime data
+backend/var/
 backend/.env.local
+
+# Frontend build embedded in backend (regenerate with make dashboard-frontend)
+backend/internal/ui/dist/
