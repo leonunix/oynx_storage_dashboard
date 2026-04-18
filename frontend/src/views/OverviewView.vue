@@ -24,6 +24,28 @@
       </div>
     </div>
 
+    <!-- User IO latency (avg, derived from volume_*_total_ns / volume_*_ops) -->
+    <div class="content-card">
+      <div class="section-header">
+        <div>
+          <h3>User IO latency</h3>
+          <p class="chart-note">
+            Avg ms/op · read: volume.read() 进入到 return · write: volume.write() 进入到 ack 返回。
+          </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="latency-chip latency-chip-read">
+            R <strong>{{ formatLatency(telemetry.rates?.clientReadLatencyNs) }}</strong>
+          </span>
+          <span class="latency-chip latency-chip-write">
+            W <strong>{{ formatLatency(telemetry.rates?.clientWriteLatencyNs) }}</strong>
+          </span>
+          <span class="badge text-bg-light border">{{ HISTORY_WINDOW }}</span>
+        </div>
+      </div>
+      <TrendChart :series="latencySeries" :height="200" format="duration" />
+    </div>
+
     <!-- Buffer lanes (visual) -->
     <div class="content-card">
       <div class="section-header">
@@ -86,9 +108,11 @@ import { useRouter } from 'vue-router'
 import http from '../api/http'
 import AppShell from '../components/AppShell.vue'
 import DataFlowDiagram from '../components/DataFlowDiagram.vue'
+import TrendChart from '../components/TrendChart.vue'
 import {
   formatBytes,
   formatDateTime,
+  formatDurationNs,
   formatPercent,
   formatRatio,
 } from '../lib/telemetry'
@@ -109,6 +133,26 @@ let refreshHandle = null
 const latest = computed(() => telemetry.value.latest)
 const bufferShards = computed(() => overview.value.bufferShards || [])
 const lastRefreshLabel = computed(() => formatDateTime(lastLoadedAt.value))
+
+const latencySeries = computed(() => {
+  const series = telemetry.value?.series || {}
+  return [
+    {
+      key: 'client_read_latency',
+      label: 'Read',
+      color: '#0d9488',
+      points: series.client_read_latency_ns || [],
+    },
+    {
+      key: 'client_write_latency',
+      label: 'Write',
+      color: '#2563eb',
+      points: series.client_write_latency_ns || [],
+    },
+  ]
+})
+
+const formatLatency = (value) => formatDurationNs(value)
 
 const statCards = computed(() => [
   {
@@ -371,6 +415,48 @@ onBeforeUnmount(() => {
 
 .text-danger {
   color: var(--onyx-danger) !important;
+}
+
+/* ─── Latency chips ─────────────────────────────── */
+
+.latency-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--onyx-border);
+  background: var(--onyx-surface-soft);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--onyx-muted);
+}
+
+.latency-chip strong {
+  font-weight: 700;
+  color: var(--onyx-text, #0f172a);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.latency-chip-read {
+  border-color: #0d948840;
+  background: #0d948810;
+}
+
+.latency-chip-read strong {
+  color: #0d9488;
+}
+
+.latency-chip-write {
+  border-color: #2563eb40;
+  background: #2563eb10;
+}
+
+.latency-chip-write strong {
+  color: #2563eb;
 }
 
 /* ─── Responsive ────────────────────────────────── */

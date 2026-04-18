@@ -407,8 +407,10 @@ type MetricsJSON struct {
 	VolumeOpenOps                       uint64 `json:"volume_open_ops"`
 	VolumeReadOps                       uint64 `json:"volume_read_ops"`
 	VolumeReadBytes                     uint64 `json:"volume_read_bytes"`
+	VolumeReadTotalNs                   uint64 `json:"volume_read_total_ns"`
 	VolumeWriteOps                      uint64 `json:"volume_write_ops"`
 	VolumeWriteBytes                    uint64 `json:"volume_write_bytes"`
+	VolumeWriteTotalNs                  uint64 `json:"volume_write_total_ns"`
 	BufferAppends                       uint64 `json:"buffer_appends"`
 	BufferAppendBytes                   uint64 `json:"buffer_append_bytes"`
 	BufferWriteOps                      uint64 `json:"buffer_write_ops"`
@@ -424,9 +426,10 @@ type MetricsJSON struct {
 	ReadBufferHits                      uint64 `json:"read_buffer_hits"`
 	ReadLv3Hits                         uint64 `json:"read_lv3_hits"`
 	Lv3ReadOps                          uint64 `json:"lv3_read_ops"`
-	Lv3ReadBytes                        uint64 `json:"lv3_read_bytes"`
+	Lv3ReadCompressedBytes              uint64 `json:"lv3_read_compressed_bytes"`
+	Lv3ReadDecompressedBytes            uint64 `json:"lv3_read_decompressed_bytes"`
 	Lv3WriteOps                         uint64 `json:"lv3_write_ops"`
-	Lv3WriteBytes                       uint64 `json:"lv3_write_bytes"`
+	Lv3WriteCompressedBytes             uint64 `json:"lv3_write_compressed_bytes"`
 	ReadUnmapped                        uint64 `json:"read_unmapped"`
 	ReadCrcErrors                       uint64 `json:"read_crc_errors"`
 	CoalesceRuns                        uint64 `json:"coalesce_runs"`
@@ -470,19 +473,22 @@ type TelemetryPoint struct {
 }
 
 type TelemetryRates struct {
-	WindowSeconds   float64 `json:"windowSeconds"`
-	ClientReadBps   float64 `json:"clientReadBps"`
-	ClientWriteBps  float64 `json:"clientWriteBps"`
-	ClientReadIops  float64 `json:"clientReadIops"`
-	ClientWriteIops float64 `json:"clientWriteIops"`
-	BufferReadBps   float64 `json:"bufferReadBps"`
-	BufferWriteBps  float64 `json:"bufferWriteBps"`
-	BufferReadIops  float64 `json:"bufferReadIops"`
-	BufferWriteIops float64 `json:"bufferWriteIops"`
-	Lv3ReadBps      float64 `json:"lv3ReadBps"`
-	Lv3WriteBps     float64 `json:"lv3WriteBps"`
-	Lv3ReadIops     float64 `json:"lv3ReadIops"`
-	Lv3WriteIops    float64 `json:"lv3WriteIops"`
+	WindowSeconds          float64 `json:"windowSeconds"`
+	ClientReadBps          float64 `json:"clientReadBps"`
+	ClientWriteBps         float64 `json:"clientWriteBps"`
+	ClientReadIops         float64 `json:"clientReadIops"`
+	ClientWriteIops        float64 `json:"clientWriteIops"`
+	ClientReadLatencyNs    float64 `json:"clientReadLatencyNs"`
+	ClientWriteLatencyNs   float64 `json:"clientWriteLatencyNs"`
+	BufferReadBps          float64 `json:"bufferReadBps"`
+	BufferWriteBps         float64 `json:"bufferWriteBps"`
+	BufferReadIops         float64 `json:"bufferReadIops"`
+	BufferWriteIops        float64 `json:"bufferWriteIops"`
+	Lv3ReadBps             float64 `json:"lv3ReadBps"`
+	Lv3ReadDecompressedBps float64 `json:"lv3ReadDecompressedBps"`
+	Lv3WriteBps            float64 `json:"lv3WriteBps"`
+	Lv3ReadIops            float64 `json:"lv3ReadIops"`
+	Lv3WriteIops           float64 `json:"lv3WriteIops"`
 }
 
 type TelemetrySnapshot struct {

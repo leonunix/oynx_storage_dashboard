@@ -135,9 +135,12 @@ func (s *OnyxService) overviewJSON() (domain.Overview, error) {
 		ov.Metrics["buffer_read_ops"] = s.Metrics.BufferReadOps
 		ov.Metrics["buffer_read_bytes"] = s.Metrics.BufferReadBytes
 		ov.Metrics["lv3_read_ops"] = s.Metrics.Lv3ReadOps
-		ov.Metrics["lv3_read_bytes"] = s.Metrics.Lv3ReadBytes
+		ov.Metrics["lv3_read_compressed_bytes"] = s.Metrics.Lv3ReadCompressedBytes
+		ov.Metrics["lv3_read_decompressed_bytes"] = s.Metrics.Lv3ReadDecompressedBytes
 		ov.Metrics["lv3_write_ops"] = s.Metrics.Lv3WriteOps
-		ov.Metrics["lv3_write_bytes"] = s.Metrics.Lv3WriteBytes
+		ov.Metrics["lv3_write_compressed_bytes"] = s.Metrics.Lv3WriteCompressedBytes
+		ov.Metrics["volume_read_total_ns"] = s.Metrics.VolumeReadTotalNs
+		ov.Metrics["volume_write_total_ns"] = s.Metrics.VolumeWriteTotalNs
 		ov.Metrics["compress_input_bytes"] = s.Metrics.CompressInputBytes
 		ov.Metrics["compress_output_bytes"] = s.Metrics.CompressOutputBytes
 		ov.Metrics["buffer_payload_bytes"] = ov.BufferPayloadBytes

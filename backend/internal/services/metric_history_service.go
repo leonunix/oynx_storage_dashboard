@@ -137,9 +137,12 @@ func (s *telemetrySample) rows() []tstorage.Row {
 		add("buffer_write_ops", float64(s.Metrics.BufferWriteOps)),
 		add("buffer_write_bytes", float64(s.Metrics.BufferWriteBytes)),
 		add("lv3_read_ops", float64(s.Metrics.Lv3ReadOps)),
-		add("lv3_read_bytes", float64(s.Metrics.Lv3ReadBytes)),
+		add("lv3_read_compressed_bytes", float64(s.Metrics.Lv3ReadCompressedBytes)),
+		add("lv3_read_decompressed_bytes", float64(s.Metrics.Lv3ReadDecompressedBytes)),
 		add("lv3_write_ops", float64(s.Metrics.Lv3WriteOps)),
-		add("lv3_write_bytes", float64(s.Metrics.Lv3WriteBytes)),
+		add("lv3_write_compressed_bytes", float64(s.Metrics.Lv3WriteCompressedBytes)),
+		add("volume_read_total_ns", float64(s.Metrics.VolumeReadTotalNs)),
+		add("volume_write_total_ns", float64(s.Metrics.VolumeWriteTotalNs)),
 		add("dedup_hits", float64(s.Metrics.DedupHits)),
 		add("dedup_misses", float64(s.Metrics.DedupMisses)),
 		add("gc_blocks_rewritten", float64(s.Metrics.GcBlocksRewritten)),
@@ -285,7 +288,7 @@ func (s *MetricsHistoryService) Telemetry(ctx context.Context, window time.Durat
 	if response.Series["buffer_write_bps"], err = s.selectRateSeries("buffer_write_bytes", start, end, 1); err != nil {
 		return domain.TelemetryResponse{}, err
 	}
-	if response.Series["lv3_write_bps"], err = s.selectRateSeries("lv3_write_bytes", start, end, 1); err != nil {
+	if response.Series["lv3_write_bps"], err = s.selectRateSeries("lv3_write_compressed_bytes", start, end, 1); err != nil {
 		return domain.TelemetryResponse{}, err
 	}
 	if response.Series["client_read_bps"], err = s.selectRateSeries("volume_read_bytes", start, end, 1); err != nil {
@@ -294,7 +297,16 @@ func (s *MetricsHistoryService) Telemetry(ctx context.Context, window time.Durat
 	if response.Series["buffer_read_bps"], err = s.selectRateSeries("buffer_read_bytes", start, end, 1); err != nil {
 		return domain.TelemetryResponse{}, err
 	}
-	if response.Series["lv3_read_bps"], err = s.selectRateSeries("lv3_read_bytes", start, end, 1); err != nil {
+	if response.Series["lv3_read_bps"], err = s.selectRateSeries("lv3_read_compressed_bytes", start, end, 1); err != nil {
+		return domain.TelemetryResponse{}, err
+	}
+	if response.Series["lv3_read_decompressed_bps"], err = s.selectRateSeries("lv3_read_decompressed_bytes", start, end, 1); err != nil {
+		return domain.TelemetryResponse{}, err
+	}
+	if response.Series["client_read_latency_ns"], err = s.selectAvgLatencySeries("volume_read_total_ns", "volume_read_ops", start, end); err != nil {
+		return domain.TelemetryResponse{}, err
+	}
+	if response.Series["client_write_latency_ns"], err = s.selectAvgLatencySeries("volume_write_total_ns", "volume_write_ops", start, end); err != nil {
 		return domain.TelemetryResponse{}, err
 	}
 	if response.Series["client_write_iops"], err = s.selectRateSeries("volume_write_ops", start, end, 1); err != nil {
@@ -446,6 +458,57 @@ func (s *MetricsHistoryService) selectRateSeries(metric string, start, end int64
 	return result, nil
 }
 
+// selectAvgLatencySeries returns a per-sample average latency (ns/op) derived
+// from two cumulative counters (total ns and op count). For each adjacent
+// sample pair, it computes Δns / Δops. Points with no op delta are emitted as
+// zero to keep the x-axis aligned with other rate series.
+func (s *MetricsHistoryService) selectAvgLatencySeries(totalNsMetric, opsMetric string, start, end int64) ([]domain.TelemetryPoint, error) {
+	nsPoints, err := s.storage.Select(totalNsMetric, nil, start, end)
+	if errors.Is(err, tstorage.ErrNoDataPoints) {
+		nsPoints = nil
+	} else if err != nil {
+		return nil, err
+	}
+	opsPoints, err := s.storage.Select(opsMetric, nil, start, end)
+	if errors.Is(err, tstorage.ErrNoDataPoints) {
+		opsPoints = nil
+	} else if err != nil {
+		return nil, err
+	}
+	if len(nsPoints) < 2 || len(opsPoints) < 2 {
+		return []domain.TelemetryPoint{}, nil
+	}
+
+	// Align by timestamp — both series are sampled from the same snapshot on
+	// the same schedule, so the common case is 1:1 matching. We still do an
+	// explicit lookup so a missed sample on either side doesn't skew results.
+	opsByTs := make(map[int64]float64, len(opsPoints))
+	for _, p := range opsPoints {
+		opsByTs[p.Timestamp] = p.Value
+	}
+
+	result := make([]domain.TelemetryPoint, 0, len(nsPoints)-1)
+	for i := 1; i < len(nsPoints); i++ {
+		prev := nsPoints[i-1]
+		curr := nsPoints[i]
+		prevOps, okPrev := opsByTs[prev.Timestamp]
+		currOps, okCurr := opsByTs[curr.Timestamp]
+		if !okPrev || !okCurr {
+			continue
+		}
+		deltaNs := curr.Value - prev.Value
+		deltaOps := currOps - prevOps
+		if deltaNs < 0 || deltaOps <= 0 {
+			continue
+		}
+		result = append(result, domain.TelemetryPoint{
+			Timestamp: curr.Timestamp,
+			Value:     deltaNs / deltaOps,
+		})
+	}
+	return result, nil
+}
+
 func buildTelemetryRates(previous, latest *telemetrySample) domain.TelemetryRates {
 	if previous == nil || latest == nil {
 		return domain.TelemetryRates{}
@@ -463,20 +526,34 @@ func buildTelemetryRates(previous, latest *telemetrySample) domain.TelemetryRate
 		return float64(curr-prev) / windowSeconds
 	}
 
+	avgLatency := func(prevNs, currNs, prevOps, currOps uint64) float64 {
+		if currNs < prevNs || currOps <= prevOps {
+			return 0
+		}
+		deltaOps := currOps - prevOps
+		if deltaOps == 0 {
+			return 0
+		}
+		return float64(currNs-prevNs) / float64(deltaOps)
+	}
+
 	return domain.TelemetryRates{
-		WindowSeconds:   windowSeconds,
-		ClientReadBps:   rate(previous.Metrics.VolumeReadBytes, latest.Metrics.VolumeReadBytes),
-		ClientWriteBps:  rate(previous.Metrics.VolumeWriteBytes, latest.Metrics.VolumeWriteBytes),
-		ClientReadIops:  rate(previous.Metrics.VolumeReadOps, latest.Metrics.VolumeReadOps),
-		ClientWriteIops: rate(previous.Metrics.VolumeWriteOps, latest.Metrics.VolumeWriteOps),
-		BufferReadBps:   rate(previous.Metrics.BufferReadBytes, latest.Metrics.BufferReadBytes),
-		BufferWriteBps:  rate(previous.Metrics.BufferWriteBytes, latest.Metrics.BufferWriteBytes),
-		BufferReadIops:  rate(previous.Metrics.BufferReadOps, latest.Metrics.BufferReadOps),
-		BufferWriteIops: rate(previous.Metrics.BufferWriteOps, latest.Metrics.BufferWriteOps),
-		Lv3ReadBps:      rate(previous.Metrics.Lv3ReadBytes, latest.Metrics.Lv3ReadBytes),
-		Lv3WriteBps:     rate(previous.Metrics.Lv3WriteBytes, latest.Metrics.Lv3WriteBytes),
-		Lv3ReadIops:     rate(previous.Metrics.Lv3ReadOps, latest.Metrics.Lv3ReadOps),
-		Lv3WriteIops:    rate(previous.Metrics.Lv3WriteOps, latest.Metrics.Lv3WriteOps),
+		WindowSeconds:          windowSeconds,
+		ClientReadBps:          rate(previous.Metrics.VolumeReadBytes, latest.Metrics.VolumeReadBytes),
+		ClientWriteBps:         rate(previous.Metrics.VolumeWriteBytes, latest.Metrics.VolumeWriteBytes),
+		ClientReadIops:         rate(previous.Metrics.VolumeReadOps, latest.Metrics.VolumeReadOps),
+		ClientWriteIops:        rate(previous.Metrics.VolumeWriteOps, latest.Metrics.VolumeWriteOps),
+		ClientReadLatencyNs:    avgLatency(previous.Metrics.VolumeReadTotalNs, latest.Metrics.VolumeReadTotalNs, previous.Metrics.VolumeReadOps, latest.Metrics.VolumeReadOps),
+		ClientWriteLatencyNs:   avgLatency(previous.Metrics.VolumeWriteTotalNs, latest.Metrics.VolumeWriteTotalNs, previous.Metrics.VolumeWriteOps, latest.Metrics.VolumeWriteOps),
+		BufferReadBps:          rate(previous.Metrics.BufferReadBytes, latest.Metrics.BufferReadBytes),
+		BufferWriteBps:         rate(previous.Metrics.BufferWriteBytes, latest.Metrics.BufferWriteBytes),
+		BufferReadIops:         rate(previous.Metrics.BufferReadOps, latest.Metrics.BufferReadOps),
+		BufferWriteIops:        rate(previous.Metrics.BufferWriteOps, latest.Metrics.BufferWriteOps),
+		Lv3ReadBps:             rate(previous.Metrics.Lv3ReadCompressedBytes, latest.Metrics.Lv3ReadCompressedBytes),
+		Lv3ReadDecompressedBps: rate(previous.Metrics.Lv3ReadDecompressedBytes, latest.Metrics.Lv3ReadDecompressedBytes),
+		Lv3WriteBps:            rate(previous.Metrics.Lv3WriteCompressedBytes, latest.Metrics.Lv3WriteCompressedBytes),
+		Lv3ReadIops:            rate(previous.Metrics.Lv3ReadOps, latest.Metrics.Lv3ReadOps),
+		Lv3WriteIops:           rate(previous.Metrics.Lv3WriteOps, latest.Metrics.Lv3WriteOps),
 	}
 }
 

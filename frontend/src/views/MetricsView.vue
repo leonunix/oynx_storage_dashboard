@@ -293,7 +293,8 @@ const readThroughputSeries = computed(() =>
   buildSeries(telemetry.value, [
     { key: 'client_read_bps', label: 'Client read', color: '#475569' },
     { key: 'buffer_read_bps', label: 'Buffer read', color: '#3b82f6' },
-    { key: 'lv3_read_bps', label: 'LV3 read', color: '#f59e0b' },
+    { key: 'lv3_read_bps', label: 'LV3 disk (compressed)', color: '#f59e0b' },
+    { key: 'lv3_read_decompressed_bps', label: 'LV3 user (decompressed)', color: '#0d9488' },
   ]),
 )
 

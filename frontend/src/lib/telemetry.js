@@ -138,6 +138,25 @@ export function formatWindowLabel(windowKey) {
   }
 }
 
+export function formatDurationNs(value) {
+  if (value == null || !Number.isFinite(value) || value < 0) {
+    return '-'
+  }
+  const ms = value / 1_000_000
+  if (ms >= 1000) {
+    return `${(ms / 1000).toFixed(2)} s`
+  }
+  if (ms >= 10) {
+    return `${ms.toFixed(1)} ms`
+  }
+  if (ms >= 0.01) {
+    return `${ms.toFixed(2)} ms`
+  }
+  // Sub-10µs: still show in ms for consistency (3 decimals) to satisfy the
+  // dashboard's ms-only convention.
+  return `${ms.toFixed(3)} ms`
+}
+
 export function formatByKind(kind, value) {
   switch (kind) {
     case 'bytes':
@@ -150,6 +169,8 @@ export function formatByKind(kind, value) {
       return formatPercent(value)
     case 'ratio':
       return formatRatio(value)
+    case 'duration':
+      return formatDurationNs(value)
     case 'number':
     default:
       return formatNumber(value)
