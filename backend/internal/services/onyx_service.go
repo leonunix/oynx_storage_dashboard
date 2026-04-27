@@ -209,7 +209,7 @@ func (s *OnyxService) SampleTelemetry(ctx context.Context) (*telemetrySample, er
 		return nil, err
 	}
 
-	return newTelemetrySample(time.Now().UTC(), overview, *metrics), nil
+	return newTelemetrySample(time.Now().UTC(), overview, *metrics, overview.Metadb), nil
 }
 
 func (s *OnyxService) ListVolumes(ctx context.Context) ([]domain.Volume, error) {

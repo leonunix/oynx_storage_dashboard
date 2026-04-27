@@ -229,6 +229,42 @@
           <TrendChart :series="backgroundSeries" :height="220" />
         </div>
       </div>
+
+      <div class="col-12">
+        <div class="content-card chart-card">
+          <div class="section-header">
+            <div>
+              <h3>Metadb apply latency by op type</h3>
+              <p class="chart-note">Average per-op apply time, broken down by WalOp variant. Climbing lines mean state-size is dragging that op class — typical first suspects: L2pPut (radix tree depth), DedupPut (LSM compaction).</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in metadbApplySeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="metadbApplySeries" :height="260" baseline="fit" format="durationUs" />
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="content-card chart-card">
+          <div class="section-header">
+            <div>
+              <h3>Metadb commit pipeline</h3>
+              <p class="chart-note">Apply work vs apply queue wait, averaged per commit. Apply rising = single-op cost growing. Wait rising = backpressure on the LSN apply queue.</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span v-for="serie in metadbCommitSeries" :key="serie.key">
+              <i class="legend-dot" :style="{ background: serie.color }"></i>
+              {{ serie.label }}
+            </span>
+          </div>
+          <TrendChart :series="metadbCommitSeries" :height="220" baseline="fit" format="durationUs" />
+        </div>
+      </div>
     </div>
 
     <div class="metric-summary-grid">
@@ -358,6 +394,24 @@ const backgroundSeries = computed(() =>
     { key: 'dedup_misses_per_min', label: 'Dedup misses/min', color: '#3b82f6' },
     { key: 'gc_rewrites_per_min', label: 'GC rewrites/min', color: '#f59e0b' },
     { key: 'backpressure_events_per_min', label: 'Backpressure/min', color: '#ef4444' },
+  ]),
+)
+
+const metadbApplySeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'metadb_apply_l2p_put_us_per_op', label: 'L2pPut', color: '#2563eb' },
+    { key: 'metadb_apply_l2p_remap_us_per_op', label: 'L2pRemap', color: '#0d9488' },
+    { key: 'metadb_apply_l2p_delete_us_per_op', label: 'L2pDelete', color: '#475569' },
+    { key: 'metadb_apply_l2p_range_delete_us_per_op', label: 'L2pRangeDelete', color: '#7c3aed' },
+    { key: 'metadb_apply_refcount_us_per_op', label: 'Refcount', color: '#f59e0b' },
+    { key: 'metadb_apply_dedup_us_per_op', label: 'Dedup', color: '#ef4444' },
+  ]),
+)
+
+const metadbCommitSeries = computed(() =>
+  buildSeries(telemetry.value, [
+    { key: 'metadb_commit_apply_us_per_op', label: 'Apply / commit', color: '#2563eb' },
+    { key: 'metadb_commit_apply_wait_us_per_op', label: 'Apply wait / commit', color: '#ef4444' },
   ]),
 )
 

@@ -442,6 +442,24 @@ type MetadbMemoryJSON struct {
 	CleanupTxOps               uint64  `json:"cleanup_tx_ops"`
 	CleanupTotalUs             uint64  `json:"cleanup_total_us"`
 	CleanupTotalMaxUs          uint64  `json:"cleanup_total_max_us"`
+	ApplyL2pPutCount           uint64  `json:"apply_l2p_put_count"`
+	ApplyL2pPutUs              uint64  `json:"apply_l2p_put_us"`
+	ApplyL2pPutMaxUs           uint64  `json:"apply_l2p_put_max_us"`
+	ApplyL2pDeleteCount        uint64  `json:"apply_l2p_delete_count"`
+	ApplyL2pDeleteUs           uint64  `json:"apply_l2p_delete_us"`
+	ApplyL2pDeleteMaxUs        uint64  `json:"apply_l2p_delete_max_us"`
+	ApplyL2pRemapCount         uint64  `json:"apply_l2p_remap_count"`
+	ApplyL2pRemapUs            uint64  `json:"apply_l2p_remap_us"`
+	ApplyL2pRemapMaxUs         uint64  `json:"apply_l2p_remap_max_us"`
+	ApplyL2pRangeDeleteCount   uint64  `json:"apply_l2p_range_delete_count"`
+	ApplyL2pRangeDeleteUs      uint64  `json:"apply_l2p_range_delete_us"`
+	ApplyL2pRangeDeleteMaxUs   uint64  `json:"apply_l2p_range_delete_max_us"`
+	ApplyRefcountCount         uint64  `json:"apply_refcount_count"`
+	ApplyRefcountUs            uint64  `json:"apply_refcount_us"`
+	ApplyRefcountMaxUs         uint64  `json:"apply_refcount_max_us"`
+	ApplyDedupCount            uint64  `json:"apply_dedup_count"`
+	ApplyDedupUs               uint64  `json:"apply_dedup_us"`
+	ApplyDedupMaxUs            uint64  `json:"apply_dedup_max_us"`
 }
 
 type BufferShardJSON struct {

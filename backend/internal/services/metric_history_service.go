@@ -35,9 +35,10 @@ type telemetrySample struct {
 	DedupHitRatePct      float64
 	DataReductionRatio   float64
 	Metrics              domain.MetricsJSON
+	Metadb               *domain.MetadbMemoryJSON
 }
 
-func newTelemetrySample(capturedAt time.Time, overview domain.Overview, metrics domain.MetricsJSON) *telemetrySample {
+func newTelemetrySample(capturedAt time.Time, overview domain.Overview, metrics domain.MetricsJSON, metadb *domain.MetadbMemoryJSON) *telemetrySample {
 	compressionRatio := 1.0
 	if metrics.CompressOutputBytes > 0 {
 		compressionRatio = float64(metrics.CompressInputBytes) / float64(metrics.CompressOutputBytes)
@@ -72,6 +73,7 @@ func newTelemetrySample(capturedAt time.Time, overview domain.Overview, metrics 
 		DedupHitRatePct:      dedupHitRatePct,
 		DataReductionRatio:   dataReductionRatio,
 		Metrics:              metrics,
+		Metadb:               metadb,
 	}
 }
 
@@ -127,7 +129,7 @@ func (s *telemetrySample) rows() []tstorage.Row {
 		}
 	}
 
-	return []tstorage.Row{
+	rows := []tstorage.Row{
 		add("volume_read_ops", float64(s.Metrics.VolumeReadOps)),
 		add("volume_read_bytes", float64(s.Metrics.VolumeReadBytes)),
 		add("volume_write_ops", float64(s.Metrics.VolumeWriteOps)),
@@ -161,6 +163,29 @@ func (s *telemetrySample) rows() []tstorage.Row {
 		add("live_handle_count", float64(s.LiveHandleCount)),
 		add("zone_count", float64(s.ZoneCount)),
 	}
+
+	if m := s.Metadb; m != nil {
+		rows = append(rows,
+			add("metadb_commit_attempts", float64(m.CommitAttempts)),
+			add("metadb_commit_total_us", float64(m.CommitTotalUs)),
+			add("metadb_commit_apply_us", float64(m.CommitApplyUs)),
+			add("metadb_commit_apply_wait_us", float64(m.CommitApplyWaitUs)),
+			add("metadb_apply_l2p_put_count", float64(m.ApplyL2pPutCount)),
+			add("metadb_apply_l2p_put_us", float64(m.ApplyL2pPutUs)),
+			add("metadb_apply_l2p_delete_count", float64(m.ApplyL2pDeleteCount)),
+			add("metadb_apply_l2p_delete_us", float64(m.ApplyL2pDeleteUs)),
+			add("metadb_apply_l2p_remap_count", float64(m.ApplyL2pRemapCount)),
+			add("metadb_apply_l2p_remap_us", float64(m.ApplyL2pRemapUs)),
+			add("metadb_apply_l2p_range_delete_count", float64(m.ApplyL2pRangeDeleteCount)),
+			add("metadb_apply_l2p_range_delete_us", float64(m.ApplyL2pRangeDeleteUs)),
+			add("metadb_apply_refcount_count", float64(m.ApplyRefcountCount)),
+			add("metadb_apply_refcount_us", float64(m.ApplyRefcountUs)),
+			add("metadb_apply_dedup_count", float64(m.ApplyDedupCount)),
+			add("metadb_apply_dedup_us", float64(m.ApplyDedupUs)),
+		)
+	}
+
+	return rows
 }
 
 type MetricsHistoryService struct {
@@ -358,6 +383,34 @@ func (s *MetricsHistoryService) Telemetry(ctx context.Context, window time.Durat
 		return domain.TelemetryResponse{}, err
 	}
 	if response.Series["backpressure_events_per_min"], err = s.selectRateSeries("buffer_backpressure_events", start, end, 60); err != nil {
+		return domain.TelemetryResponse{}, err
+	}
+	// Per-WalOp-type apply latency (us per op) — exposes which op class is
+	// dragging metadb apply down as state size grows. selectAvgLatencySeries
+	// is unit-agnostic; we use us as both numerator and denominator unit so
+	// the ratio comes out as us/op.
+	if response.Series["metadb_commit_apply_us_per_op"], err = s.selectAvgLatencySeries("metadb_commit_apply_us", "metadb_commit_attempts", start, end); err != nil {
+		return domain.TelemetryResponse{}, err
+	}
+	if response.Series["metadb_commit_apply_wait_us_per_op"], err = s.selectAvgLatencySeries("metadb_commit_apply_wait_us", "metadb_commit_attempts", start, end); err != nil {
+		return domain.TelemetryResponse{}, err
+	}
+	if response.Series["metadb_apply_l2p_put_us_per_op"], err = s.selectAvgLatencySeries("metadb_apply_l2p_put_us", "metadb_apply_l2p_put_count", start, end); err != nil {
+		return domain.TelemetryResponse{}, err
+	}
+	if response.Series["metadb_apply_l2p_delete_us_per_op"], err = s.selectAvgLatencySeries("metadb_apply_l2p_delete_us", "metadb_apply_l2p_delete_count", start, end); err != nil {
+		return domain.TelemetryResponse{}, err
+	}
+	if response.Series["metadb_apply_l2p_remap_us_per_op"], err = s.selectAvgLatencySeries("metadb_apply_l2p_remap_us", "metadb_apply_l2p_remap_count", start, end); err != nil {
+		return domain.TelemetryResponse{}, err
+	}
+	if response.Series["metadb_apply_l2p_range_delete_us_per_op"], err = s.selectAvgLatencySeries("metadb_apply_l2p_range_delete_us", "metadb_apply_l2p_range_delete_count", start, end); err != nil {
+		return domain.TelemetryResponse{}, err
+	}
+	if response.Series["metadb_apply_refcount_us_per_op"], err = s.selectAvgLatencySeries("metadb_apply_refcount_us", "metadb_apply_refcount_count", start, end); err != nil {
+		return domain.TelemetryResponse{}, err
+	}
+	if response.Series["metadb_apply_dedup_us_per_op"], err = s.selectAvgLatencySeries("metadb_apply_dedup_us", "metadb_apply_dedup_count", start, end); err != nil {
 		return domain.TelemetryResponse{}, err
 	}
 

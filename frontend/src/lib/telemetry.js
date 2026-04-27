@@ -157,6 +157,13 @@ export function formatDurationNs(value) {
   return `${ms.toFixed(3)} ms`
 }
 
+export function formatDurationUs(value) {
+  if (value == null || !Number.isFinite(value) || value < 0) {
+    return '-'
+  }
+  return formatDurationNs(value * 1000)
+}
+
 export function formatByKind(kind, value) {
   switch (kind) {
     case 'bytes':
@@ -171,6 +178,8 @@ export function formatByKind(kind, value) {
       return formatRatio(value)
     case 'duration':
       return formatDurationNs(value)
+    case 'durationUs':
+      return formatDurationUs(value)
     case 'number':
     default:
       return formatNumber(value)
