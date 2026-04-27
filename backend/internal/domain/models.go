@@ -353,6 +353,7 @@ type Overview struct {
 	AllocatorTotalBlocks uint64            `json:"allocatorTotalBlocks"`
 	UblkDevices          []uint32          `json:"ublkDevices"`
 	BufferShards         []BufferShardJSON `json:"bufferShards"`
+	Metadb               *MetadbMemoryJSON `json:"metadb,omitempty"`
 	CompressionRatio     float64           `json:"compressionRatio"`
 	DedupHitRate         float64           `json:"dedupHitRate"`
 	DataReductionRatio   float64           `json:"dataReductionRatio"`
@@ -377,10 +378,70 @@ type EngineStatusJSON struct {
 	BufferFillPct        *int              `json:"buffer_fill_pct"`
 	BufferPayloadBytes   *uint64           `json:"buffer_payload_memory_bytes"`
 	BufferPayloadLimit   *uint64           `json:"buffer_payload_memory_limit_bytes"`
+	MetadbMemory         *MetadbMemoryJSON `json:"metadb_memory"`
 	BufferShards         []BufferShardJSON `json:"buffer_shards"`
 	AllocatorFreeBlocks  *uint64           `json:"allocator_free_blocks"`
 	AllocatorTotalBlocks *uint64           `json:"allocator_total_blocks"`
 	Metrics              MetricsJSON       `json:"metrics"`
+}
+
+type MetadbMemoryJSON struct {
+	BlockCacheCapacityBytes    *uint64 `json:"block_cache_capacity_bytes"`
+	BlockCacheUsageBytes       *uint64 `json:"block_cache_usage_bytes"`
+	BlockCachePinnedUsageBytes *uint64 `json:"block_cache_pinned_usage_bytes"`
+	CurSizeAllMemTablesBytes   uint64  `json:"cur_size_all_mem_tables_bytes"`
+	SizeAllMemTablesBytes      uint64  `json:"size_all_mem_tables_bytes"`
+	EstimateTableReadersBytes  uint64  `json:"estimate_table_readers_mem_bytes"`
+	LastAppliedLsn             uint64  `json:"last_applied_lsn"`
+	HighWaterPages             uint64  `json:"high_water_pages"`
+	CacheHits                  uint64  `json:"cache_hits"`
+	CacheMisses                uint64  `json:"cache_misses"`
+	CacheEvictions             uint64  `json:"cache_evictions"`
+	CacheCurrentPages          uint64  `json:"cache_current_pages"`
+	CacheCapacityBytes         uint64  `json:"cache_capacity_bytes"`
+	CachePinnedPages           uint64  `json:"cache_pinned_pages"`
+	CachePinBudgetBytes        uint64  `json:"cache_pin_budget_bytes"`
+	CommitAttempts             uint64  `json:"commit_attempts"`
+	CommitSuccess              uint64  `json:"commit_success"`
+	CommitErrors               uint64  `json:"commit_errors"`
+	CommitEmpty                uint64  `json:"commit_empty"`
+	CommitOps                  uint64  `json:"commit_ops"`
+	CommitTotalUs              uint64  `json:"commit_total_us"`
+	CommitTotalMaxUs           uint64  `json:"commit_total_max_us"`
+	CommitApplyWaitUs          uint64  `json:"commit_apply_wait_us"`
+	CommitApplyWaitMaxUs       uint64  `json:"commit_apply_wait_max_us"`
+	CommitApplyUs              uint64  `json:"commit_apply_us"`
+	CommitApplyMaxUs           uint64  `json:"commit_apply_max_us"`
+	WalSubmitCalls             uint64  `json:"wal_submit_calls"`
+	WalBatches                 uint64  `json:"wal_batches"`
+	WalRecords                 uint64  `json:"wal_records"`
+	WalBytes                   uint64  `json:"wal_bytes"`
+	WalRotates                 uint64  `json:"wal_rotates"`
+	WalFsyncs                  uint64  `json:"wal_fsyncs"`
+	WalWriteUs                 uint64  `json:"wal_write_us"`
+	WalWriteMaxUs              uint64  `json:"wal_write_max_us"`
+	WalFsyncUs                 uint64  `json:"wal_fsync_us"`
+	WalFsyncMaxUs              uint64  `json:"wal_fsync_max_us"`
+	WalBatchRecordsMax         uint64  `json:"wal_batch_records_max"`
+	WalBatchBytesMax           uint64  `json:"wal_batch_bytes_max"`
+	RangeDeleteCalls           uint64  `json:"range_delete_calls"`
+	RangeDeleteSuccess         uint64  `json:"range_delete_success"`
+	RangeDeleteErrors          uint64  `json:"range_delete_errors"`
+	RangeDeleteNoop            uint64  `json:"range_delete_noop"`
+	RangeDeleteCapturedEntries uint64  `json:"range_delete_captured_entries"`
+	RangeDeleteChunks          uint64  `json:"range_delete_chunks"`
+	RangeDeleteTotalUs         uint64  `json:"range_delete_total_us"`
+	RangeDeleteTotalMaxUs      uint64  `json:"range_delete_total_max_us"`
+	CleanupCalls               uint64  `json:"cleanup_calls"`
+	CleanupSuccess             uint64  `json:"cleanup_success"`
+	CleanupErrors              uint64  `json:"cleanup_errors"`
+	CleanupNoop                uint64  `json:"cleanup_noop"`
+	CleanupPbas                uint64  `json:"cleanup_pbas"`
+	CleanupHashesFound         uint64  `json:"cleanup_hashes_found"`
+	CleanupTombstonesEmitted   uint64  `json:"cleanup_tombstones_emitted"`
+	CleanupTxOps               uint64  `json:"cleanup_tx_ops"`
+	CleanupTotalUs             uint64  `json:"cleanup_total_us"`
+	CleanupTotalMaxUs          uint64  `json:"cleanup_total_max_us"`
 }
 
 type BufferShardJSON struct {

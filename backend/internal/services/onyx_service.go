@@ -118,6 +118,7 @@ func (s *OnyxService) overviewJSON() (domain.Overview, error) {
 		if s.BufferPayloadLimit != nil {
 			ov.BufferPayloadLimit = *s.BufferPayloadLimit
 		}
+		ov.Metadb = s.MetadbMemory
 		if s.AllocatorFreeBlocks != nil {
 			ov.AllocatorFreeBlocks = *s.AllocatorFreeBlocks
 		}
@@ -145,6 +146,9 @@ func (s *OnyxService) overviewJSON() (domain.Overview, error) {
 		ov.Metrics["compress_output_bytes"] = s.Metrics.CompressOutputBytes
 		ov.Metrics["buffer_payload_bytes"] = ov.BufferPayloadBytes
 		ov.Metrics["buffer_payload_limit"] = ov.BufferPayloadLimit
+		if s.MetadbMemory != nil {
+			ov.Metrics["metadb"] = s.MetadbMemory
+		}
 		ov.Metrics["buffer_backpressure_events"] = s.Metrics.BufferBackpressureEvents
 		ov.Metrics["buffer_hydration_skips"] = s.Metrics.BufferHydrationSkippedDueToMemLimit
 		ov.Metrics["dedup_hits"] = s.Metrics.DedupHits

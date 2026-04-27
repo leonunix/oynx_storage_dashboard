@@ -46,6 +46,8 @@
       </div>
     </div>
 
+    <MetadbStatusPanel :stats="metadbStats" />
+
     <div class="row g-4">
       <div class="col-12 col-xl-6">
         <div class="content-card chart-card">
@@ -252,6 +254,7 @@ import { useRouter } from 'vue-router'
 import http from '../api/http'
 import AppShell from '../components/AppShell.vue'
 import FlowPipeline from '../components/FlowPipeline.vue'
+import MetadbStatusPanel from '../components/MetadbStatusPanel.vue'
 import TrendChart from '../components/TrendChart.vue'
 import {
   buildSeries,
@@ -274,12 +277,16 @@ const AUTO_REFRESH_MS = 20000
 
 const telemetry = ref({ series: {}, rates: {}, latest: null })
 const raw = ref({})
+const overview = ref({})
 const selectedWindow = ref('24h')
 
 let refreshHandle = null
 
 const latest = computed(() => telemetry.value.latest)
 const windowLabel = computed(() => formatWindowLabel(selectedWindow.value))
+const metadbStats = computed(() =>
+  overview.value?.metadb || overview.value?.metrics?.metadb || overview.value?.metrics?.metadb_memory || null,
+)
 
 const writeThroughputSeries = computed(() =>
   buildSeries(telemetry.value, [
@@ -449,13 +456,15 @@ const metricGroups = computed(() => {
 })
 
 const load = async () => {
-  const [telemetryResp, metricsResp] = await Promise.all([
+  const [telemetryResp, metricsResp, overviewResp] = await Promise.all([
     http.get(`/metrics/timeseries?window=${selectedWindow.value}`),
     http.get('/metrics/summary'),
+    http.get('/dashboard/overview'),
   ])
 
   telemetry.value = telemetryResp.data || { series: {}, rates: {}, latest: null }
   raw.value = metricsResp.data || {}
+  overview.value = overviewResp.data || {}
 }
 
 const selectWindow = async (nextWindow) => {
